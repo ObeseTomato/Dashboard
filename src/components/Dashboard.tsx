@@ -6,24 +6,31 @@ import { Badge } from './ui/badge';
 import { ExportMenu } from './ExportMenu';
 import { DashboardData, KPICard } from '../types/dashboard';
 import { AlertTriangle, CheckCircle, Clock, Zap, Brain, FileText, TrendingUp, BarChart3, Loader2 } from 'lucide-react';
-import { useLatestKPIs, useTasks, useReviews, useDigitalAssets } from '../hooks/useSupabaseAPI'; // Added useDigitalAssets
-import { useMemo } from 'react';
+import { useLatestKPIs, useTasks, useReviews, useDigitalAssets } from '../hooks/useSupabaseAPI';
+import { useMemo, useState } from 'react'; // Added useState
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog'; // Added Dialog components
+import { Label } from './ui/label'; // Added Label for dialog content
 
 interface DashboardProps {
-  data: DashboardData; // This prop still provides mock data for static sections if needed.
-  onNavigate: (tab: string, itemId?: string) => void; // Added itemId to onNavigate
+  data: DashboardData;
+  onNavigate: (tab: string, itemId?: string) => void;
 }
 
 export const Dashboard = ({ data, onNavigate }: DashboardProps) => {
+  // State for popups
+  const [selectedTask, setSelectedTask] = useState<any | null>(null);
+  const [selectedAsset, setSelectedAsset] = useState<any | null>(null);
+  const [selectedDataGap, setSelectedDataGap] = useState<string | null>(null);
+
   // Fetch live data from Supabase
   const { data: latestKPIs, isLoading: kpisLoading, error: kpisError } = useLatestKPIs();
   const { data: tasksData, isLoading: tasksLoading, error: tasksError } = useTasks();
   const { data: reviewsData, isLoading: reviewsLoading, error: reviewsError } = useReviews();
-  const { data: digitalAssetsData, isLoading: digitalAssetsLoading, error: digitalAssetsError } = useDigitalAssets(); // Fetch live digital assets
+  const { data: digitalAssetsData, isLoading: digitalAssetsLoading, error: digitalAssetsError } = useDigitalAssets();
 
   // Helper function to calculate percentage change
   const calculateChange = (current: number, previous: number) => {
-    if (!previous || previous === 0) return 0; // Avoid division by zero
+    if (!previous || previous === 0) return 0;
     return (((current - previous) / previous) * 100);
   };
 
@@ -38,69 +45,59 @@ export const Dashboard = ({ data, onNavigate }: DashboardProps) => {
       ];
     }
 
-    // Dynamic KPI Calculations
-    // Note: To get accurate "change" data, your kpi_time_series table needs historical data points for comparison periods.
-    // For now, these are simplified or use mock comparison.
-
-    // Business Profile Views (renamed from GMB Profile Views)
     const businessProfileViews = latestKPIs?.['Business Profile Views'] || latestKPIs?.['GMB Views'] || latestKPIs?.['GMB Profile Views'] || null;
     const bpViewsValue = businessProfileViews ? businessProfileViews.metric_value.toLocaleString() : 'N/A';
-    const bpViewsChange = calculateChange(businessProfileViews?.metric_value || 0, 2500); // Placeholder 'previous' value for demo
+    const bpViewsChange = calculateChange(businessProfileViews?.metric_value || 0, 2500);
     
-    // Business Profile Actions (New KPI) - Placeholder, needs actual metric in DB
     const businessProfileActions = latestKPIs?.['Business Profile Actions'] || null;
     const bpActionsValue = businessProfileActions ? businessProfileActions.metric_value.toLocaleString() : 'N/A';
-    const bpActionsChange = calculateChange(businessProfileActions?.metric_value || 0, 300); // Placeholder 'previous' value
+    const bpActionsChange = calculateChange(businessProfileActions?.metric_value || 0, 300);
 
-    // Website Sessions
     const websiteSessions = latestKPIs?.['Website Sessions'] || latestKPIs?.['Website Traffic'] || null;
     const websiteValue = websiteSessions ? websiteSessions.metric_value.toLocaleString() : 'N/A';
-    const websiteChange = calculateChange(websiteSessions?.metric_value || 0, 1100); // Placeholder 'previous' value
+    const websiteChange = calculateChange(websiteSessions?.metric_value || 0, 1100);
 
-    // Website Conversion Rate (New KPI) - Placeholder, needs actual metric in DB
     const websiteConversionRate = latestKPIs?.['Website Conversion Rate'] || null;
     const conversionRateValue = websiteConversionRate ? `${websiteConversionRate.metric_value}%` : 'N/A';
-    const conversionRateChange = calculateChange(websiteConversionRate?.metric_value || 0, 2.5); // Placeholder 'previous' value
+    const conversionRateChange = calculateChange(websiteConversionRate?.metric_value || 0, 2.5);
 
-    // Review Rating
     let reviewRating = 'N/A';
     let reviewChange = 0;
-    let newReviewsCount = 0; // New stat
+    let newReviewsCount = 0;
     if (reviewsData && reviewsData.length > 0) {
       const validRatings = reviewsData.filter(r => r.rating !== null && r.rating !== undefined);
       if (validRatings.length > 0) {
         const avgRating = validRatings.reduce((sum, r) => sum + (r.rating || 0), 0) / validRatings.length;
         reviewRating = avgRating.toFixed(1);
-        reviewChange = calculateChange(avgRating, 4.6); // Compare to baseline for demo
+        reviewChange = calculateChange(avgRating, 4.6);
       }
       const oneMonthAgo = new Date();
       oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
       newReviewsCount = reviewsData.filter(r => new Date(r.created_at || r.review_timestamp) >= oneMonthAgo).length;
     }
     
-    // Task Completion
     let taskCompletion = 'N/A';
     let taskChange = 0;
-    let overdueTasksCount = 0; // New stat
+    let overdueTasksCount = 0;
     if (tasksData && tasksData.length > 0) {
       const completedTasks = tasksData.filter(t => t.status === 'completed').length;
       const totalTasks = tasksData.length;
       if (totalTasks > 0) {
         const completionRate = Math.round((completedTasks / totalTasks) * 100);
         taskCompletion = `${completionRate}%`;
-        taskChange = calculateChange(completionRate, 90); // Compare to baseline for demo
+        taskChange = calculateChange(completionRate, 90);
       }
       overdueTasksCount = tasksData.filter(t => t.status !== 'completed' && new Date(t.due_date) < new Date()).length;
     }
 
     return [
       {
-        title: 'Business Profile Views', // Updated title
+        title: 'Business Profile Views',
         value: bpViewsValue,
         change: parseFloat(bpViewsChange.toFixed(1)),
         trend: bpViewsChange >= 0 ? 'up' : 'down',
         icon: 'eye',
-        subMetric: { label: 'Actions', value: bpActionsValue, change: parseFloat(bpActionsChange.toFixed(1)) } // Adding sub-metric for display in StatCard
+        subMetric: { label: 'Actions', value: bpActionsValue, change: parseFloat(bpActionsChange.toFixed(1)) }
       },
       {
         title: 'Website Sessions',
@@ -108,7 +105,7 @@ export const Dashboard = ({ data, onNavigate }: DashboardProps) => {
         change: parseFloat(websiteChange.toFixed(1)),
         trend: websiteChange >= 0 ? 'up' : 'down',
         icon: 'monitor',
-        subMetric: { label: 'Conversion Rate', value: conversionRateValue, change: parseFloat(conversionRateChange.toFixed(1)) } // Adding sub-metric
+        subMetric: { label: 'Conversion Rate', value: conversionRateValue, change: parseFloat(conversionRateChange.toFixed(1)) }
       },
       {
         title: 'Review Rating',
@@ -116,7 +113,7 @@ export const Dashboard = ({ data, onNavigate }: DashboardProps) => {
         change: parseFloat(reviewChange.toFixed(1)),
         trend: reviewChange >= 0 ? 'up' : 'down',
         icon: 'star',
-        subMetric: { label: 'New Reviews (30D)', value: newReviewsCount.toString(), change: 0 } // Adding sub-metric
+        subMetric: { label: 'New Reviews (30D)', value: newReviewsCount.toString(), change: 0 }
       },
       {
         title: 'Task Completion',
@@ -124,18 +121,18 @@ export const Dashboard = ({ data, onNavigate }: DashboardProps) => {
         change: parseFloat(taskChange.toFixed(1)),
         trend: taskChange >= 0 ? 'up' : 'down',
         icon: 'check',
-        subMetric: { label: 'Overdue Tasks', value: overdueTasksCount.toString(), change: 0 } // Adding sub-metric
+        subMetric: { label: 'Overdue Tasks', value: overdueTasksCount.toString(), change: 0 }
       }
     ];
   }, [latestKPIs, tasksData, reviewsData, kpisLoading, tasksLoading, reviewsLoading]);
 
   // Use live tasks data for priority tasks section
-  const highPriorityTasks = useMemo(() => { // <--- DEFINITION OF highPriorityTasks
-    if (!tasksData) return []; // Return empty array if data is not available
+  const highPriorityTasks = useMemo(() => {
+    if (!tasksData) return [];
     
     return tasksData
       .filter(task => task.status !== 'completed' && task.priority === 'high')
-      .slice(0, 3) // Limit to top 3 high priority tasks
+      .slice(0, 3)
       .map(task => ({
         id: task.id.toString(),
         title: task.task_name || 'Untitled Task',
@@ -146,29 +143,27 @@ export const Dashboard = ({ data, onNavigate }: DashboardProps) => {
         completed: task.status === 'completed',
         aiGenerated: false
       }));
-  }, [tasksData]); // Dependency array for useMemo
+  }, [tasksData]);
 
   // Use live digitalAssetsData for critical assets section
   const criticalAssets = useMemo(() => {
-    if (digitalAssetsLoading || !digitalAssetsData) return []; // Show empty or loading if data not ready
+    if (digitalAssetsLoading || !digitalAssetsData) return [];
     
     return digitalAssetsData
       .filter(asset => asset.status === 'critical')
-      .slice(0, 3) // Limit to top 3 critical assets
+      .slice(0, 3)
       .map(asset => ({
         id: asset.id.toString(),
         name: asset.asset_name,
         type: asset.asset_type,
         status: asset.status,
         lastUpdated: asset.last_updated ? new Date(asset.last_updated).toLocaleDateString() : 'N/A',
-        priority: asset.priority // Added priority for consistency
+        priority: asset.priority
       }));
   }, [digitalAssetsData, digitalAssetsLoading]);
 
   // Data Gaps: Placeholder for dynamic data
   const dataGaps = useMemo(() => {
-    // In a real scenario, this would query a 'system_alerts' or 'data_integrity_logs' table
-    // For now, returning a static list or dynamically deriving it from system checks
     return [
       'Google Business Profile insights last updated 3 days ago (Simulated)',
       'Facebook page analytics missing (Simulated)',
@@ -196,7 +191,7 @@ export const Dashboard = ({ data, onNavigate }: DashboardProps) => {
     {
       title: 'View Ecosystem',
       description: 'Interactive asset mapping',
-      icon: AlertTriangle, // Keep AlertTriangle for ecosystem for now, could be Globe
+      icon: AlertTriangle,
       bgColor: 'bg-purple-100',
       iconColor: 'text-purple-600',
       onClick: () => onNavigate('ecosystem')
@@ -211,7 +206,6 @@ export const Dashboard = ({ data, onNavigate }: DashboardProps) => {
     }
   ];
 
-  // Show loading state if any critical data is loading
   if (kpisLoading || tasksLoading || reviewsLoading || digitalAssetsLoading) {
     return (
       <div className="space-y-6 p-6">
@@ -230,7 +224,6 @@ export const Dashboard = ({ data, onNavigate }: DashboardProps) => {
     );
   }
 
-  // Show error state if there are critical errors
   if (kpisError || tasksError || reviewsError || digitalAssetsError) {
     return (
       <div className="space-y-6 p-6">
@@ -265,30 +258,29 @@ export const Dashboard = ({ data, onNavigate }: DashboardProps) => {
           </div>
         </div>
         <ExportMenu 
-          data={{ dashboard: data }} // Data prop for ExportMenu might still include mock data for non-dynamic sections
+          data={{ dashboard: data }} 
           type="dashboard" 
           variant="default"
         />
       </div>
 
-      {/* KPI Cards - Now with live data and enhanced functionality */}
+      {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {kpiData.map((kpi, index) => (
           <StatCard 
             key={index} 
             data={kpi} 
             onClick={() => {
-                // Determine navigation based on KPI title
                 if (kpi.title === 'Business Profile Views') {
                     onNavigate('performance', 'Business Profiles'); 
                 } else if (kpi.title === 'Website Sessions') {
                     onNavigate('performance', 'Website Analytics'); 
                 } else if (kpi.title === 'Review Rating') {
-                    onNavigate('assets', 'review_platform'); // Navigate to Asset Log, filter by review platform
+                    onNavigate('assets', 'review_platform'); 
                 } else if (kpi.title === 'Task Completion') {
-                    onNavigate('tasks', 'overdue_tasks'); // Navigate to Tasks, filter by overdue
+                    onNavigate('tasks', 'overdue_tasks'); 
                 } else {
-                    onNavigate('performance', kpi.title); // Fallback to general performance navigation
+                    onNavigate('performance', kpi.title);
                 }
             }}
             clickable={true} 
@@ -297,7 +289,7 @@ export const Dashboard = ({ data, onNavigate }: DashboardProps) => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* High Priority Tasks - Now with live data */}
+        {/* High Priority Tasks */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-lg font-semibold flex items-center">
@@ -307,7 +299,7 @@ export const Dashboard = ({ data, onNavigate }: DashboardProps) => {
             <Button 
               variant="outline" 
               size="sm"
-              onClick={() => onNavigate('tasks', 'priority:high')} // Navigate to tasks, filter by high priority
+              onClick={() => onNavigate('tasks', 'priority:high')}
             >
               View All
             </Button>
@@ -315,7 +307,11 @@ export const Dashboard = ({ data, onNavigate }: DashboardProps) => {
           <CardContent className="space-y-3">
             {highPriorityTasks.length > 0 ? (
               highPriorityTasks.map(task => (
-                <div key={task.id} className="flex items-start space-x-3 p-3 bg-accent/50 rounded-lg">
+                <div 
+                  key={task.id} 
+                  className="flex items-start space-x-3 p-3 bg-accent/50 rounded-lg cursor-pointer hover:bg-accent transition-colors"
+                  onClick={() => setSelectedTask(task)} // Click to open task detail dialog
+                >
                   <Clock className="h-4 w-4 text-warning mt-0.5" />
                   <div className="flex-1">
                     <p className="text-sm font-medium text-foreground">{task.title}</p>
@@ -340,7 +336,7 @@ export const Dashboard = ({ data, onNavigate }: DashboardProps) => {
           </CardContent>
         </Card>
 
-        {/* Critical Issues - Now dynamic from Supabase assets */}
+        {/* Critical Issues */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-lg font-semibold flex items-center">
@@ -350,7 +346,7 @@ export const Dashboard = ({ data, onNavigate }: DashboardProps) => {
             <Button 
               variant="outline" 
               size="sm"
-              onClick={() => onNavigate('assets', 'status:critical')} // Navigate to assets, filter by critical status
+              onClick={() => onNavigate('assets', 'status:critical')}
             >
               View Assets
             </Button>
@@ -358,7 +354,11 @@ export const Dashboard = ({ data, onNavigate }: DashboardProps) => {
           <CardContent className="space-y-3">
             {criticalAssets.length > 0 ? (
               criticalAssets.map(asset => (
-                <div key={asset.id} className="flex items-start space-x-3 p-3 bg-destructive/10 rounded-lg">
+                <div 
+                  key={asset.id} 
+                  className="flex items-start space-x-3 p-3 bg-destructive/10 rounded-lg cursor-pointer hover:bg-destructive/20 transition-colors"
+                  onClick={() => setSelectedAsset(asset)} // Click to open asset detail dialog
+                >
                   <AlertTriangle className="h-4 w-4 text-destructive mt-0.5" />
                   <div className="flex-1">
                     <p className="text-sm font-medium text-foreground">{asset.name}</p>
@@ -380,7 +380,7 @@ export const Dashboard = ({ data, onNavigate }: DashboardProps) => {
           </CardContent>
         </Card>
 
-        {/* Data Gaps - Placeholder for dynamic data */}
+        {/* Data Gaps */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-lg font-semibold flex items-center">
@@ -390,14 +390,18 @@ export const Dashboard = ({ data, onNavigate }: DashboardProps) => {
             <Button 
               variant="outline" 
               size="sm"
-              onClick={() => onNavigate('system', 'data-gaps')} // Navigate to system, section on data gaps
+              onClick={() => onNavigate('system', 'data-gaps')}
             >
               System Check
             </Button>
           </CardHeader>
           <CardContent className="space-y-3">
             {dataGaps.map((gap, index) => (
-              <div key={index} className="flex items-start space-x-3 p-3 bg-warning/10 rounded-lg">
+              <div 
+                key={index} 
+                className="flex items-start space-x-3 p-3 bg-warning/10 rounded-lg cursor-pointer hover:bg-warning/20 transition-colors"
+                onClick={() => setSelectedDataGap(gap)} // Click to open data gap detail dialog
+              >
                 <AlertTriangle className="h-4 w-4 text-warning mt-0.5" />
                 <p className="text-sm text-foreground">{gap}</p>
               </div>
@@ -447,6 +451,108 @@ export const Dashboard = ({ data, onNavigate }: DashboardProps) => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Task Detail Dialog */}
+      <Dialog open={!!selectedTask} onOpenChange={() => setSelectedTask(null)}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>{selectedTask?.title}</DialogTitle>
+            <DialogDescription>Details for this priority task.</DialogDescription>
+          </DialogHeader>
+          {selectedTask && (
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label className="text-right">Description</Label>
+                <div className="col-span-3 text-muted-foreground">{selectedTask.description}</div>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label className="text-right">Type</Label>
+                <div className="col-span-3"><Badge>{selectedTask.type.replace('_', ' ')}</Badge></div>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label className="text-right">Priority</Label>
+                <div className="col-span-3"><Badge variant={selectedTask.priority === 'high' ? 'destructive' : 'default'}>{selectedTask.priority}</Badge></div>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label className="text-right">Due Date</Label>
+                <div className="col-span-3 text-muted-foreground">{new Date(selectedTask.dueDate).toLocaleDateString()}</div>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label className="text-right">Status</Label>
+                <div className="col-span-3 text-muted-foreground">{selectedTask.completed ? 'Completed' : 'Pending'}</div>
+              </div>
+            </div>
+          )}
+          <div className="flex justify-end">
+            <Button onClick={() => onNavigate('tasks', selectedTask?.id)}>View in Task Management</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Asset Detail Dialog */}
+      <Dialog open={!!selectedAsset} onOpenChange={() => setSelectedAsset(null)}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>{selectedAsset?.name}</DialogTitle>
+            <DialogDescription>Details for this critical asset.</DialogDescription>
+          </DialogHeader>
+          {selectedAsset && (
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label className="text-right">Type</Label>
+                <div className="col-span-3 text-muted-foreground">{selectedAsset.type.replace('_', ' ').toUpperCase()}</div>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label className="text-right">Status</Label>
+                <div className="col-span-3"><Badge variant="destructive">{selectedAsset.status}</Badge></div>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label className="text-right">Priority</Label>
+                <div className="col-span-3"><Badge variant={selectedAsset.priority === 'high' ? 'destructive' : 'default'}>{selectedAsset.priority}</Badge></div>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label className="text-right">Last Updated</Label>
+                <div className="col-span-3 text-muted-foreground">{selectedAsset.lastUpdated}</div>
+              </div>
+              {selectedAsset.url && (
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label className="text-right">URL</Label>
+                  <a href={selectedAsset.url} target="_blank" rel="noopener noreferrer" className="col-span-3 text-blue-500 hover:underline truncate">{selectedAsset.url}</a>
+                </div>
+              )}
+            </div>
+          )}
+          <div className="flex justify-end">
+            <Button onClick={() => onNavigate('assets', selectedAsset?.id)}>View in Asset Log</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Data Gap Detail Dialog */}
+      <Dialog open={!!selectedDataGap} onOpenChange={() => setSelectedDataGap(null)}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Data Gap Details</DialogTitle>
+            <DialogDescription>Information about this identified data gap.</DialogDescription>
+          </DialogHeader>
+          {selectedDataGap && (
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-1 items-center gap-4">
+                <Label className="text-left">Description</Label>
+                <div className="text-muted-foreground">{selectedDataGap}</div>
+              </div>
+              {/* Add more details here if dataGaps become dynamic objects */}
+              <div className="text-sm text-muted-foreground mt-4">
+                <p>This entry indicates a potential inconsistency or missing data point in your ecosystem.</p>
+                <p>Consider running a System Check for more details.</p>
+              </div>
+            </div>
+          )}
+          <div className="flex justify-end">
+            <Button onClick={() => onNavigate('system', 'data-gaps')}>Run System Check</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
