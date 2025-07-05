@@ -1,3 +1,4 @@
+// obesetomato/dashboard/Dashboard-c1fdb5a0f45fa9f7c956a11b09f4801f23b45082/src/components/Dashboard.tsx
 import { StatCard } from './StatCard';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
@@ -127,6 +128,25 @@ export const Dashboard = ({ data, onNavigate }: DashboardProps) => {
       }
     ];
   }, [latestKPIs, tasksData, reviewsData, kpisLoading, tasksLoading, reviewsLoading]);
+
+  // Use live tasks data for priority tasks section
+  const highPriorityTasks = useMemo(() => { // <--- DEFINITION OF highPriorityTasks
+    if (!tasksData) return []; // Return empty array if data is not available
+    
+    return tasksData
+      .filter(task => task.status !== 'completed' && task.priority === 'high')
+      .slice(0, 3) // Limit to top 3 high priority tasks
+      .map(task => ({
+        id: task.id.toString(),
+        title: task.task_name || 'Untitled Task',
+        description: task.description || 'No description',
+        type: task.category || 'general',
+        priority: task.priority || 'medium',
+        dueDate: task.due_date || new Date().toISOString().split('T')[0],
+        completed: task.status === 'completed',
+        aiGenerated: false
+      }));
+  }, [tasksData]); // Dependency array for useMemo
 
   // Use live digitalAssetsData for critical assets section
   const criticalAssets = useMemo(() => {
