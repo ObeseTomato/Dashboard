@@ -203,7 +203,7 @@ export const VisualEcosystem = ({ data, onAssetClick, onNavigate }: VisualEcosys
               priority: asset.priority,
               x: assetX,
               y: assetY,
-              metrics: asset.key_metrics_json, // Use key_metrics_json as per DB
+              metrics: asset.key_metrics_json, 
               description: `${asset.asset_type ? asset.asset_type.replace('_', ' ') : 'Asset'} with ${asset.status} status`
             });
           });
@@ -211,7 +211,7 @@ export const VisualEcosystem = ({ data, onAssetClick, onNavigate }: VisualEcosys
       }
     });
     return nodes;
-  }, [digitalAssetsData, collapsedCategories, data.clinic.name]); // digitalAssetsData is a key dependency
+  }, [digitalAssetsData, collapsedCategories, data.clinic.name]); 
 
   const hubNode = ecosystemNodes.find(n => n.id === 'hub');
 
@@ -312,7 +312,8 @@ export const VisualEcosystem = ({ data, onAssetClick, onNavigate }: VisualEcosys
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {Object.entries(groupedAssets).map(([type, assets]) => {
             const Icon = getAssetIcon(type);
-            const typeLabel = type ? type.type.replace('_', ' ').toUpperCase() : 'GENERAL'; // Corrected access to type name
+            // Corrected access to type name. 'type' here is the string key from groupedAssets
+            const typeLabel = type ? type.replace('_', ' ').toUpperCase() : 'GENERAL'; 
             
             return (
               <Card key={type} className="hover:shadow-lg transition-all duration-300">
@@ -357,7 +358,7 @@ export const VisualEcosystem = ({ data, onAssetClick, onNavigate }: VisualEcosys
                         {asset.key_metrics_json && Object.keys(asset.key_metrics_json).length > 0 ? (
                           <div className="mt-2 pt-2 border-t border-current/20">
                             <div className="grid grid-cols-2 gap-1 text-xs">
-                              {Object.entries(asset.key_metrics_json).slice(0, 2).map(([key, value]) => (
+                              {Object.entries(asset.key_metrics_json).map(([key, value]) => (
                                 <div key={key} className="flex justify-between">
                                   <span className="opacity-75">{key}:</span>
                                   <span className="font-medium">{typeof value === 'number' ? value.toLocaleString() : value}</span>
