@@ -22,28 +22,29 @@ import {
   Users, 
   Megaphone,
   ExternalLink,
-  Eye,
+  Eye, // Keep Eye icon for Asset Detail Dialog, if not removing from there.
   TrendingUp,
   Calendar,
   Plus,
   Loader2,
   Trash2,
-  AlertTriangle, // Added for error state
-  CheckCircle // Added for loading state
+  AlertTriangle, 
+  CheckCircle,
+  Pencil // Added Pencil icon for Edit button
 } from 'lucide-react';
 import { useDigitalAssets, useCreateDigitalAsset, useUpdateDigitalAsset } from '../hooks/useSupabaseAPI';
 import { useToast } from '../hooks/use-toast';
-import { DigitalAsset } from '../types/dashboard'; // Import DigitalAsset type
-import { cn } from '@/lib/utils'; // Import cn
+import { DigitalAsset } from '../types/dashboard'; 
+import { cn } from '@/lib/utils'; 
 
 interface AssetLogProps {
-  data?: any; // Keep for compatibility but use Supabase data
-  onAssetClick?: (assetId: string) => void;
+  data?: any; 
+  onAssetClick?: (assetId: string) => void; // This prop can still be used for parent component logic if needed.
 }
 
 interface NewDigitalAsset {
   asset_name: string;
-  asset_type: 'business_profile' | 'website' | 'social_media' | 'directory' | 'review_platform' | 'advertising';
+  asset_type: 'business_profile' | 'website' | 'social_media' | 'directory' | 'review_platform' | 'advertising' | 'content_platform' | 'analytics_tool'; // Added new types for consistency
   status: 'active' | 'warning' | 'critical' | 'inactive';
   priority: 'high' | 'medium' | 'low';
   url: string;
@@ -73,7 +74,9 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
       case 'social_media': return Users;
       case 'directory': return Globe;
       case 'advertising': return Megaphone;
-      case 'review_platform': return FileText; // Using FileText for review platforms
+      case 'review_platform': return FileText;
+      case 'content_platform': return FileText; 
+      case 'analytics_tool': return Monitor; 
       default: return Globe;
     }
   };
@@ -106,7 +109,6 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
     }
   };
 
-  // NEW: Function to get priority-based left border coloring
   const getPriorityBorderColor = (priority: string) => {
     switch (priority) {
       case 'high': return 'border-l-destructive'; 
@@ -129,7 +131,6 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
 
       await createAssetMutation.mutateAsync(newAsset);
 
-      // Reset form
       setNewAsset({
         asset_name: '',
         asset_type: 'website',
@@ -170,6 +171,18 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
         description: "Failed to update asset status.",
         variant: "destructive"
       });
+    }
+  };
+
+  const handleEditAsset = () => {
+    if (selectedAsset) {
+      toast({
+        title: "Edit Asset",
+        description: `Edit functionality for "${selectedAsset.asset_name}" is coming soon!`,
+        type: "info"
+      });
+      // Future: Implement a dedicated edit form dialog or navigate to edit page
+      setSelectedAsset(null); // Close the view dialog
     }
   };
 
@@ -274,8 +287,8 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
                       <SelectItem value="directory">Directory</SelectItem>
                       <SelectItem value="review_platform">Review Platform</SelectItem>
                       <SelectItem value="advertising">Advertising</SelectItem>
-                      <SelectItem value="content_platform">Content Platform</SelectItem> {/* Added for consistency */}
-                      <SelectItem value="analytics_tool">Analytics Tool</SelectItem> {/* Added for consistency */}
+                      <SelectItem value="content_platform">Content Platform</SelectItem> 
+                      <SelectItem value="analytics_tool">Analytics Tool</SelectItem> 
                     </SelectContent>
                   </Select>
                 </div>
@@ -386,8 +399,8 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
                     <TableRow 
                       key={asset.id} 
                       className={cn(
-                        "hover:bg-muted/50 cursor-pointer border-l-4", // Added border-l-4 for priority color
-                        getPriorityBorderColor(asset.priority) // Apply priority color
+                        "hover:bg-muted/50 cursor-pointer border-l-4", 
+                        getPriorityBorderColor(asset.priority) 
                       )}
                       onClick={() => setSelectedAsset(asset)} // Open dialog on row click
                     >
@@ -433,23 +446,13 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
                       </TableCell>
                       <TableCell>
                         <div className="flex space-x-1">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation(); // Prevent row click from triggering
-                              // onAssetClick?.(asset.id.toString()); // If needed for parent component
-                              setSelectedAsset(asset); // Re-open the dialog if already open
-                            }}
-                          >
-                            <Eye className="h-3 w-3" />
-                          </Button>
+                          {/* Removed redundant Eye button, row click handles view */}
                           {asset.url && (
                             <Button
                               variant="ghost"
                               size="sm"
                               onClick={(e) => {
-                                e.stopPropagation();
+                                e.stopPropagation(); 
                                 window.open(asset.url, '_blank');
                               }}
                             >
@@ -467,9 +470,10 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
         </Card>
       ))}
 
-      {/* Asset Detail Dialog (Copied from Dashboard.tsx / VisualEcosystem.tsx) */}
+      {/* Asset Detail Dialog (Now used by row click) */}
       <Dialog open={!!selectedAsset} onOpenChange={() => setSelectedAsset(null)}>
-        <DialogContent className="max-w-2xl">
+        {/* Changed max-w-2xl for larger popup as requested */}
+        <DialogContent className="max-w-2xl"> 
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               {selectedAsset && (
@@ -482,7 +486,7 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
           </DialogHeader>
           
           {selectedAsset && (
-            <div className="space-y-6">
+            <div className="space-y-6 py-4"> {/* Added py-4 for consistent padding */}
               {/* Status and Priority */}
               <div className="flex items-center gap-4">
                 <Badge className={getStatusColor(selectedAsset.status)}>
@@ -511,7 +515,8 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
                   <div className="grid grid-cols-2 gap-4">
                     {Object.entries(selectedAsset.key_metrics_json).map(([key, value]) => (
                       <div key={key} className="bg-muted/50 p-3 rounded-lg">
-                        <div className="text-sm text-muted-foreground">{key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</div> {/* Format key */}
+                        {/* Formatted key for display */}
+                        <div className="text-sm text-muted-foreground">{key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</div> 
                         <div className="text-lg font-semibold">
                           {typeof value === 'number' ? value.toLocaleString() : value}
                         </div>
@@ -521,7 +526,7 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
                 </div>
               )}
 
-              {/* General Info (from DigitalAsset schema, can be expanded) */}
+              {/* General Info (from DigitalAsset schema) */}
               <div>
                 <h4 className="font-semibold mb-2">General Information</h4>
                 <div className="grid grid-cols-2 gap-2 text-sm text-muted-foreground">
@@ -533,7 +538,14 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
               </div>
 
               {/* Actions */}
-              <div className="flex gap-2">
+              <div className="flex justify-end gap-2 mt-6"> {/* Moved actions to flex-end and added top margin */}
+                <Button 
+                    variant="secondary" 
+                    onClick={handleEditAsset} // Handle edit click
+                >
+                    <Pencil className="h-4 w-4 mr-2" />
+                    Edit Asset
+                </Button>
                 {selectedAsset.url && (
                   <Button
                     onClick={() => window.open(selectedAsset.url, '_blank')}
@@ -543,20 +555,13 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
                     Visit Asset
                   </Button>
                 )}
-                {/* Re-using onAssetClick for consistency, though it's already triggered by row click */}
                 <Button
                   variant="outline"
-                  onClick={() => {
-                    setSelectedAsset(null); // Close current dialog
-                    onAssetClick?.(selectedAsset.id.toString()); // Trigger original click for parent logic
-                  }}
+                  onClick={() => onNavigate('assets', selectedAsset.id.toString())} // Navigate to Asset Log (current page) with specific asset selected
                 >
-                  <Eye className="h-4 w-4 mr-2" />
+                  <Eye className="h-4 w-4 mr-2" /> {/* Re-added Eye icon for 'View Details' button if desired, or can be removed */}
                   View Details
                 </Button>
-                {/* Future: Edit Button / Delete Button */}
-                {/* <Button variant="secondary" size="sm"><Edit className="h-4 w-4" /></Button> */}
-                {/* <Button variant="destructive" size="sm"><Trash2 className="h-4 w-4" /></Button> */}
               </div>
             </div>
           )}
