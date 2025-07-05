@@ -1,3 +1,4 @@
+// obesetomato/dashboard/Dashboard-c1fdb5a0f45fa9f7c956a11b09f4801f23b45082/src/components/Dashboard.tsx
 import { StatCard } from './StatCard';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
@@ -5,12 +6,12 @@ import { Badge } from './ui/badge';
 import { ExportMenu } from './ExportMenu';
 import { DashboardData, KPICard } from '../types/dashboard';
 import { AlertTriangle, CheckCircle, Clock, Zap, Brain, FileText, TrendingUp, BarChart3, Loader2 } from 'lucide-react';
-import { useLatestKPIs, useTasks, useReviews } from '../hooks/useSupabaseAPI';
+import { useLatestKPIs, useTasks, useReviews, useDigitalAssets } from '../hooks/useSupabaseAPI'; // Added useDigitalAssets
 import { useMemo } from 'react';
 
 interface DashboardProps {
-  data: DashboardData;
-  onNavigate: (tab: string) => void;
+  data: DashboardData; // This prop still provides mock data for static sections if needed.
+  onNavigate: (tab: string, itemId?: string) => void; // Added itemId to onNavigate
 }
 
 export const Dashboard = ({ data, onNavigate }: DashboardProps) => {
@@ -18,111 +19,143 @@ export const Dashboard = ({ data, onNavigate }: DashboardProps) => {
   const { data: latestKPIs, isLoading: kpisLoading, error: kpisError } = useLatestKPIs();
   const { data: tasksData, isLoading: tasksLoading, error: tasksError } = useTasks();
   const { data: reviewsData, isLoading: reviewsLoading, error: reviewsError } = useReviews();
+  const { data: digitalAssetsData, isLoading: digitalAssetsLoading, error: digitalAssetsError } = useDigitalAssets(); // Fetch live digital assets
+
+  // Helper function to calculate percentage change
+  const calculateChange = (current: number, previous: number) => {
+    if (!previous || previous === 0) return 0; // Avoid division by zero
+    return (((current - previous) / previous) * 100);
+  };
 
   // Calculate KPI data from live Supabase data
   const kpiData: KPICard[] = useMemo(() => {
     if (kpisLoading || tasksLoading || reviewsLoading) {
       return [
-        { title: 'GMB Profile Views', value: '...', change: 0, trend: 'stable', icon: 'eye' },
+        { title: 'Business Profile Views', value: '...', change: 0, trend: 'stable', icon: 'eye' },
         { title: 'Website Sessions', value: '...', change: 0, trend: 'stable', icon: 'monitor' },
         { title: 'Review Rating', value: '...', change: 0, trend: 'stable', icon: 'star' },
         { title: 'Task Completion', value: '...', change: 0, trend: 'stable', icon: 'check' }
       ];
     }
 
-    // GMB Profile Views from KPI data
-    const gmbViews = latestKPIs?.['GMB Profile Views'] || latestKPIs?.['GMB Views'] || null;
-    const gmbValue = gmbViews ? gmbViews.metric_value.toLocaleString() : '2,847';
+    // Dynamic KPI Calculations
+    // Note: To get accurate "change" data, your kpi_time_series table needs historical data points for comparison periods.
+    // For now, these are simplified or use mock comparison.
+
+    // Business Profile Views (renamed from GMB Profile Views)
+    const businessProfileViews = latestKPIs?.['Business Profile Views'] || latestKPIs?.['GMB Views'] || latestKPIs?.['GMB Profile Views'] || null;
+    const bpViewsValue = businessProfileViews ? businessProfileViews.metric_value.toLocaleString() : 'N/A';
+    const bpViewsChange = calculateChange(businessProfileViews?.metric_value || 0, 2500); // Placeholder 'previous' value for demo
     
-    // Website Sessions from KPI data
+    // Business Profile Actions (New KPI) - Placeholder, needs actual metric in DB
+    const businessProfileActions = latestKPIs?.['Business Profile Actions'] || null;
+    const bpActionsValue = businessProfileActions ? businessProfileActions.metric_value.toLocaleString() : 'N/A';
+    const bpActionsChange = calculateChange(businessProfileActions?.metric_value || 0, 300); // Placeholder 'previous' value
+
+    // Website Sessions
     const websiteSessions = latestKPIs?.['Website Sessions'] || latestKPIs?.['Website Traffic'] || null;
-    const websiteValue = websiteSessions ? websiteSessions.metric_value.toLocaleString() : '1,234';
-    
-    // Review Rating calculated from reviews data
-    let reviewRating = '4.8';
-    let reviewChange = 0.2;
+    const websiteValue = websiteSessions ? websiteSessions.metric_value.toLocaleString() : 'N/A';
+    const websiteChange = calculateChange(websiteSessions?.metric_value || 0, 1100); // Placeholder 'previous' value
+
+    // Website Conversion Rate (New KPI) - Placeholder, needs actual metric in DB
+    const websiteConversionRate = latestKPIs?.['Website Conversion Rate'] || null;
+    const conversionRateValue = websiteConversionRate ? `${websiteConversionRate.metric_value}%` : 'N/A';
+    const conversionRateChange = calculateChange(websiteConversionRate?.metric_value || 0, 2.5); // Placeholder 'previous' value
+
+    // Review Rating
+    let reviewRating = 'N/A';
+    let reviewChange = 0;
+    let newReviewsCount = 0; // New stat
     if (reviewsData && reviewsData.length > 0) {
       const validRatings = reviewsData.filter(r => r.rating !== null && r.rating !== undefined);
       if (validRatings.length > 0) {
         const avgRating = validRatings.reduce((sum, r) => sum + (r.rating || 0), 0) / validRatings.length;
         reviewRating = avgRating.toFixed(1);
-        // Calculate change (simplified - comparing to a baseline of 4.6)
-        reviewChange = Number(((avgRating - 4.6) * 10).toFixed(1));
+        reviewChange = calculateChange(avgRating, 4.6); // Compare to baseline for demo
       }
+      const oneMonthAgo = new Date();
+      oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+      newReviewsCount = reviewsData.filter(r => new Date(r.created_at || r.review_timestamp) >= oneMonthAgo).length;
     }
     
-    // Task Completion calculated from tasks data
-    let taskCompletion = '87%';
-    let taskChange = -3.1;
+    // Task Completion
+    let taskCompletion = 'N/A';
+    let taskChange = 0;
+    let overdueTasksCount = 0; // New stat
     if (tasksData && tasksData.length > 0) {
       const completedTasks = tasksData.filter(t => t.status === 'completed').length;
       const totalTasks = tasksData.length;
-      const completionRate = Math.round((completedTasks / totalTasks) * 100);
-      taskCompletion = `${completionRate}%`;
-      // Calculate change (simplified - comparing to a baseline of 90%)
-      taskChange = Number(((completionRate - 90) * 0.1).toFixed(1));
+      if (totalTasks > 0) {
+        const completionRate = Math.round((completedTasks / totalTasks) * 100);
+        taskCompletion = `${completionRate}%`;
+        taskChange = calculateChange(completionRate, 90); // Compare to baseline for demo
+      }
+      overdueTasksCount = tasksData.filter(t => t.status !== 'completed' && new Date(t.due_date) < new Date()).length;
     }
 
     return [
       {
-        title: 'GMB Profile Views',
-        value: gmbValue,
-        change: gmbViews ? 12.5 : 12.5, // Use actual change calculation when available
-        trend: 'up' as const,
-        icon: 'eye'
+        title: 'Business Profile Views', // Updated title
+        value: bpViewsValue,
+        change: parseFloat(bpViewsChange.toFixed(1)),
+        trend: bpViewsChange >= 0 ? 'up' : 'down',
+        icon: 'eye',
+        subMetric: { label: 'Actions', value: bpActionsValue, change: parseFloat(bpActionsChange.toFixed(1)) } // Adding sub-metric for display in StatCard
       },
       {
         title: 'Website Sessions',
         value: websiteValue,
-        change: websiteSessions ? 8.2 : 8.2, // Use actual change calculation when available
-        trend: 'up' as const,
-        icon: 'monitor'
+        change: parseFloat(websiteChange.toFixed(1)),
+        trend: websiteChange >= 0 ? 'up' : 'down',
+        icon: 'monitor',
+        subMetric: { label: 'Conversion Rate', value: conversionRateValue, change: parseFloat(conversionRateChange.toFixed(1)) } // Adding sub-metric
       },
       {
         title: 'Review Rating',
         value: reviewRating,
-        change: reviewChange,
-        trend: reviewChange >= 0 ? 'up' : 'down' as const,
-        icon: 'star'
+        change: parseFloat(reviewChange.toFixed(1)),
+        trend: reviewChange >= 0 ? 'up' : 'down',
+        icon: 'star',
+        subMetric: { label: 'New Reviews (30D)', value: newReviewsCount.toString(), change: 0 } // Adding sub-metric
       },
       {
         title: 'Task Completion',
         value: taskCompletion,
-        change: taskChange,
-        trend: taskChange >= 0 ? 'up' : 'down' as const,
-        icon: 'check'
+        change: parseFloat(taskChange.toFixed(1)),
+        trend: taskChange >= 0 ? 'up' : 'down',
+        icon: 'check',
+        subMetric: { label: 'Overdue Tasks', value: overdueTasksCount.toString(), change: 0 } // Adding sub-metric
       }
     ];
   }, [latestKPIs, tasksData, reviewsData, kpisLoading, tasksLoading, reviewsLoading]);
 
-  // Use live tasks data for priority tasks section
-  const highPriorityTasks = useMemo(() => {
-    if (!tasksData) return data.tasks.filter(task => !task.completed && task.priority === 'high').slice(0, 3);
+  // Use live digitalAssetsData for critical assets section
+  const criticalAssets = useMemo(() => {
+    if (digitalAssetsLoading || !digitalAssetsData) return []; // Show empty or loading if data not ready
     
-    return tasksData
-      .filter(task => task.status !== 'completed' && task.priority === 'high')
-      .slice(0, 3)
-      .map(task => ({
-        id: task.id.toString(),
-        title: task.task_name || 'Untitled Task',
-        description: task.description || 'No description',
-        type: task.category || 'general',
-        priority: task.priority || 'medium',
-        dueDate: task.due_date || new Date().toISOString().split('T')[0],
-        completed: task.status === 'completed',
-        aiGenerated: false
+    return digitalAssetsData
+      .filter(asset => asset.status === 'critical')
+      .slice(0, 3) // Limit to top 3 critical assets
+      .map(asset => ({
+        id: asset.id.toString(),
+        name: asset.asset_name,
+        type: asset.asset_type,
+        status: asset.status,
+        lastUpdated: asset.last_updated ? new Date(asset.last_updated).toLocaleDateString() : 'N/A',
+        priority: asset.priority // Added priority for consistency
       }));
-  }, [tasksData, data.tasks]);
+  }, [digitalAssetsData, digitalAssetsLoading]);
 
-  const criticalAssets = data.assets
-    .filter(asset => asset.status === 'critical')
-    .slice(0, 3);
-
-  const dataGaps = [
-    'Google Business Profile insights last updated 3 days ago',
-    'Facebook page analytics missing',
-    'Competitor analysis needs refresh'
-  ];
+  // Data Gaps: Placeholder for dynamic data
+  const dataGaps = useMemo(() => {
+    // In a real scenario, this would query a 'system_alerts' or 'data_integrity_logs' table
+    // For now, returning a static list or dynamically deriving it from system checks
+    return [
+      'Google Business Profile insights last updated 3 days ago (Simulated)',
+      'Facebook page analytics missing (Simulated)',
+      'Competitor analysis needs refresh (Simulated)'
+    ];
+  }, []);
 
   const quickActions = [
     {
@@ -144,7 +177,7 @@ export const Dashboard = ({ data, onNavigate }: DashboardProps) => {
     {
       title: 'View Ecosystem',
       description: 'Interactive asset mapping',
-      icon: AlertTriangle,
+      icon: AlertTriangle, // Keep AlertTriangle for ecosystem for now, could be Globe
       bgColor: 'bg-purple-100',
       iconColor: 'text-purple-600',
       onClick: () => onNavigate('ecosystem')
@@ -160,7 +193,7 @@ export const Dashboard = ({ data, onNavigate }: DashboardProps) => {
   ];
 
   // Show loading state if any critical data is loading
-  if (kpisLoading || tasksLoading || reviewsLoading) {
+  if (kpisLoading || tasksLoading || reviewsLoading || digitalAssetsLoading) {
     return (
       <div className="space-y-6 p-6">
         <div className="flex items-center justify-between">
@@ -179,7 +212,7 @@ export const Dashboard = ({ data, onNavigate }: DashboardProps) => {
   }
 
   // Show error state if there are critical errors
-  if (kpisError || tasksError || reviewsError) {
+  if (kpisError || tasksError || reviewsError || digitalAssetsError) {
     return (
       <div className="space-y-6 p-6">
         <div className="flex items-center justify-between">
@@ -193,7 +226,7 @@ export const Dashboard = ({ data, onNavigate }: DashboardProps) => {
           <AlertTriangle className="h-12 w-12 text-destructive mx-auto mb-3" />
           <p className="text-destructive">Failed to load dashboard data. Please try again.</p>
           <p className="text-sm text-muted-foreground mt-2">
-            {kpisError?.message || tasksError?.message || reviewsError?.message}
+            {kpisError?.message || tasksError?.message || reviewsError?.message || digitalAssetsError?.message}
           </p>
         </div>
       </div>
@@ -213,16 +246,21 @@ export const Dashboard = ({ data, onNavigate }: DashboardProps) => {
           </div>
         </div>
         <ExportMenu 
-          data={{ dashboard: data }} 
+          data={{ dashboard: data }} // Data prop for ExportMenu might still include mock data for non-dynamic sections
           type="dashboard" 
           variant="default"
         />
       </div>
 
-      {/* KPI Cards - Now with live data */}
+      {/* KPI Cards - Now with live data and enhanced functionality */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {kpiData.map((kpi, index) => (
-          <StatCard key={index} data={kpi} />
+          <StatCard 
+            key={index} 
+            data={kpi} 
+            onClick={() => onNavigate('performance', kpi.title)} // Make card clickable, navigate to performance with KPI title
+            clickable={true} // Add clickable prop if StatCard supports it
+          />
         ))}
       </div>
 
@@ -237,7 +275,7 @@ export const Dashboard = ({ data, onNavigate }: DashboardProps) => {
             <Button 
               variant="outline" 
               size="sm"
-              onClick={() => onNavigate('tasks')}
+              onClick={() => onNavigate('tasks', 'priority:high')} // Navigate to tasks, filter by high priority
             >
               View All
             </Button>
@@ -270,7 +308,7 @@ export const Dashboard = ({ data, onNavigate }: DashboardProps) => {
           </CardContent>
         </Card>
 
-        {/* Critical Issues */}
+        {/* Critical Issues - Now dynamic from Supabase assets */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-lg font-semibold flex items-center">
@@ -280,7 +318,7 @@ export const Dashboard = ({ data, onNavigate }: DashboardProps) => {
             <Button 
               variant="outline" 
               size="sm"
-              onClick={() => onNavigate('assets')}
+              onClick={() => onNavigate('assets', 'status:critical')} // Navigate to assets, filter by critical status
             >
               View Assets
             </Button>
@@ -310,7 +348,7 @@ export const Dashboard = ({ data, onNavigate }: DashboardProps) => {
           </CardContent>
         </Card>
 
-        {/* Data Gaps */}
+        {/* Data Gaps - Placeholder for dynamic data */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-lg font-semibold flex items-center">
@@ -320,7 +358,7 @@ export const Dashboard = ({ data, onNavigate }: DashboardProps) => {
             <Button 
               variant="outline" 
               size="sm"
-              onClick={() => onNavigate('system')}
+              onClick={() => onNavigate('system', 'data-gaps')} // Navigate to system, section on data gaps
             >
               System Check
             </Button>
@@ -332,6 +370,12 @@ export const Dashboard = ({ data, onNavigate }: DashboardProps) => {
                 <p className="text-sm text-foreground">{gap}</p>
               </div>
             ))}
+            {dataGaps.length === 0 && (
+              <div className="text-center py-4">
+                <CheckCircle className="h-8 w-8 text-success mx-auto mb-2" />
+                <p className="text-sm text-muted-foreground">No data gaps reported!</p>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
