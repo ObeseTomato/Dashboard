@@ -6,7 +6,7 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from './ui/dialog'; // ADDED DialogDescription
 import { Label } from './ui/label';
 import { 
   Table,
@@ -629,7 +629,7 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
                           ))}
                         </div>
                         {selectedAsset.key_metrics_json.specialHours && (
-                          <p className="mt-2"><strong>Special Hours:</strong> {selectedAsset.key_metrics_json.specialHours}</p>
+                           <p className="mt-2"><strong>Special Hours:</strong> {selectedAsset.key_metrics_json.specialHours}</p>
                         )}
                       </div>
                     )}
@@ -671,14 +671,14 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
                         <h4 className="font-semibold mb-2 flex items-center gap-2"><Users className="h-4 w-4 text-orange-500"/> Services</h4>
                         <div className="text-sm text-muted-foreground space-y-2">
                           {selectedAsset.key_metrics_json.services.primaryCategory && (
-                            <div>
-                              <p className="font-medium text-foreground">{selectedAsset.key_metrics_json.services.primaryCategory.name}:</p>
-                              <ul className="list-disc pl-5">
-                                {selectedAsset.key_metrics_json.services.primaryCategory.items?.map((item: any, idx: number) => (
-                                  <li key={idx}><p>{item.name}: {item.description}</p></li>
-                                ))}
-                              </ul>
-                            </div>
+                             <div>
+                               <p className="font-medium text-foreground">{selectedAsset.key_metrics_json.services.primaryCategory.name}:</p>
+                               <ul className="list-disc pl-5">
+                                 {selectedAsset.key_metrics_json.services.primaryCategory.items?.map((item: any, idx: number) => (
+                                   <li key={idx}><p>{item.name}: {item.description}</p></li>
+                                 ))}
+                               </ul>
+                             </div>
                           )}
                           {selectedAsset.key_metrics_json.services.additionalCategories?.map((cat: any, cIdx: number) => (
                             <div key={cIdx}>
@@ -795,16 +795,16 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
                   </div>
                 )}
 
-                {/* Directory/Review/Content/Analytics Tool - Generic "No Specific Details" or common metrics */}
+                {/* Directory/Review/Content/Analytics Tool - Generic "Additional Details" */}
                 {['directory', 'review_platform', 'content_platform', 'analytics_tool'].includes(selectedAsset.asset_type) && selectedAsset.key_metrics_json && Object.keys(selectedAsset.key_metrics_json).length > 0 && (
-                  <div className="space-y-6">
+                   <div className="space-y-6">
                       <h3 className="text-xl font-bold">Additional Details</h3>
                       <div className="grid grid-cols-1 gap-4 text-sm text-muted-foreground">
                           {Object.entries(selectedAsset.key_metrics_json).map(([key, value]) => (
                               <p key={key}><strong>{key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}:</strong> {typeof value === 'object' ? JSON.stringify(value) : value.toLocaleString()}</p>
                           ))}
                       </div>
-                  </div>
+                   </div>
                 )}
                 {/* Fallback if key_metrics_json is empty for these types */}
                 {['directory', 'review_platform', 'content_platform', 'analytics_tool'].includes(selectedAsset.asset_type) && (!selectedAsset.key_metrics_json || Object.keys(selectedAsset.key_metrics_json).length === 0) && (
