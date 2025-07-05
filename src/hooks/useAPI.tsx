@@ -38,23 +38,31 @@ export const useTasks = () => {
 
 export const useCreateTask = () => {
   const queryClient = useQueryClient();
-  
   return useMutation({
     mutationFn: async (newTask: any) => {
-      const response = await fetch(`${API_BASE}/tasks`, {
+      // --- START OF FIX ---
+      // Get the current session which contains the access token
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session) {
+        throw new Error('User is not authenticated.');
+      }
+
+      const response = await fetch('/api/tasks', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          // Include the user's token in the Authorization header
+          'Authorization': `Bearer ${session.access_token}`,
         },
         body: JSON.stringify(newTask),
       });
       
       if (!response.ok) {
-        throw new Error('Failed to create task');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create task');
       }
-      
-      const data = await response.json();
-      return data.data;
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
