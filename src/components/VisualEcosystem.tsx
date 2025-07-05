@@ -1,3 +1,5 @@
+// obesetomato/dashboard/Dashboard-c1fdb5a0f45fa9f7c956a11b09f4801f23b45082/src/components/VisualEcosystem.tsx
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
@@ -7,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 import { DashboardData } from '../types/dashboard';
 import { 
   Globe, 
-  Star, 
+  Star, // Change icon for business_profile
   Users, 
   Instagram, 
   Facebook, 
@@ -57,7 +59,7 @@ export const VisualEcosystem = ({ data, onAssetClick, onNavigate }: VisualEcosys
   const getAssetIcon = (type: string) => {
     switch (type) {
       case 'website': return Globe;
-      case 'gmb': return Star;
+      case 'business_profile': return Star; // Use Star icon for 'business_profile'
       case 'social_media': return Users;
       case 'directory': return Globe;
       case 'advertising': return Megaphone;
@@ -122,39 +124,39 @@ const createEcosystemNodes = (): EcosystemNode[] => {
     // Create category groups with better spacing
     const categories = [
       {
-        name: 'Foundational Platforms',
-        assets: data.assets.filter(a => a.asset_type === 'gmb' || a.asset_type === 'website'),
+        name: 'Business Profiles', // <--- Changed category name
+        assets: data.assets.filter(a => a.asset_type === 'business_profile'), // <--- Filter by new type
         angle: 0,
         color: '#10B981'
       },
       {
+        name: 'Website Platforms', // <--- New category name
+        assets: data.assets.filter(a => a.asset_type === 'website'), // <--- Filter by website type
+        angle: Math.PI / 3, // Adjusted angle
+        color: '#3B82F6' // Adjusted color
+      },
+      {
         name: 'Social Media',
         assets: data.assets.filter(a => a.asset_type === 'social_media'),
-        angle: Math.PI / 3,
+        angle: 2 * Math.PI / 3, // Adjusted angle
         color: '#8B5CF6'
       },
       {
         name: 'Directories & Reviews',
         assets: data.assets.filter(a => a.asset_type === 'directory' || a.asset_type === 'review_platform'),
-        angle: 2 * Math.PI / 3,
+        angle: Math.PI, // Adjusted angle
         color: '#F59E0B'
       },
       {
         name: 'Advertising',
         assets: data.assets.filter(a => a.asset_type === 'advertising'),
-        angle: Math.PI,
+        angle: 4 * Math.PI / 3, // Adjusted angle
         color: '#EF4444'
       },
       {
-        name: 'Content & Engagement',
-        assets: [], // We'll add blog and content assets here
-        angle: 4 * Math.PI / 3,
-        color: '#06B6D4'
-      },
-      {
-        name: 'Analytics & Tools',
-        assets: [], // We'll add analytics tools here
-        angle: 5 * Math.PI / 3,
+        name: 'Content & Tools', // <--- Combined existing categories
+        assets: data.assets.filter(a => ['content_creation', 'analysis'].includes(a.asset_type as any)), // Assuming 'content_creation' and 'analysis' might be asset types eventually, or you'd manage them differently
+        angle: 5 * Math.PI / 3, // Adjusted angle
         color: '#6366F1'
       }
     ];
@@ -191,16 +193,15 @@ const createEcosystemNodes = (): EcosystemNode[] => {
           
           nodes.push({
             id: asset.id.toString(),
-            name: asset.asset_name,
-            type: asset.asset_type,
+            name: asset.name, // Use asset.name directly
+            type: asset.type, // Use asset.type
             category: category.name,
             status: asset.status,
             priority: asset.priority,
             x: assetX,
             y: assetY,
-            metrics: asset.key_metrics_json,
-            // FIX: Add a check to ensure asset.asset_type is a string before calling .replace()
-            description: `${asset.asset_type ? asset.asset_type.replace('_', ' ') : 'Asset'} with ${asset.status} status`
+            metrics: asset.metrics, // Use asset.metrics
+            description: `${asset.type ? asset.type.replace('_', ' ') : 'Asset'} with ${asset.status} status`
           });
         });
       }
@@ -243,7 +244,7 @@ const createEcosystemNodes = (): EcosystemNode[] => {
 const renderOverview = () => {
     // FIX: The `groupedAssets` logic now correctly uses asset.asset_type for grouping
     const groupedAssets = data.assets.reduce((groups, asset) => {
-      const type = asset.asset_type || 'general'; // Fallback to 'general' if type is null
+      const type = asset.type || 'general'; // Fallback to 'general' if type is null
       if (!groups[type]) {
         groups[type] = [];
       }
@@ -304,13 +305,13 @@ const renderOverview = () => {
                         onClick={() => onAssetClick(asset.id.toString())}
                       >
                         <div className="flex items-center justify-between mb-2">
-                          <h4 className="font-medium text-sm">{asset.asset_name}</h4>
+                          <h4 className="font-medium text-sm">{asset.name}</h4>
                           <StatusIcon className="h-4 w-4" />
                         </div>
                         
                         <div className="flex items-center justify-between text-xs">
                           <span className="opacity-75">
-                            Updated: {asset.last_updated ? new Date(asset.last_updated).toLocaleDateString() : 'N/A'}
+                            Updated: {asset.lastUpdated ? new Date(asset.lastUpdated).toLocaleDateString() : 'N/A'}
                           </span>
                           <Badge 
                             variant={asset.priority === 'high' ? 'destructive' : 
@@ -321,10 +322,10 @@ const renderOverview = () => {
                           </Badge>
                         </div>
                         
-                        {asset.key_metrics_json && (
+                        {asset.metrics && ( // Changed to 'metrics'
                           <div className="mt-2 pt-2 border-t border-current/20">
                             <div className="grid grid-cols-2 gap-1 text-xs">
-                              {Object.entries(asset.key_metrics_json).slice(0, 2).map(([key, value]) => (
+                              {Object.entries(asset.metrics).slice(0, 2).map(([key, value]) => (
                                 <div key={key} className="flex justify-between">
                                   <span className="opacity-75">{key}:</span>
                                   <span className="font-medium">{value}</span>
