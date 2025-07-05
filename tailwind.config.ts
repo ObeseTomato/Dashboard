@@ -1,3 +1,4 @@
+// obesetomato/dashboard/Dashboard-c1fdb5a0f45fa9f7c956a11b09f4801f23b45082/tailwind.config.ts
 import type { Config } from "tailwindcss";
 
 export default {
@@ -93,11 +94,16 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'pulse-custom': {
+					'0%, 100%': { transform: 'scale(1)', opacity: '1' },
+					'50%': { transform: 'scale(1.1)', opacity: '0.7' },
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'pulse-custom': 'pulse-custom 1.5s infinite ease-in-out',
 			}
 		}
 	},
