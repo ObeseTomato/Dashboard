@@ -4,38 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { ExportMenu } from './ExportMenu';
-import { DashboardData, KPICard } from '../types/dashboard';
+import { DashboardData, KPICard, Task } from '../types/dashboard'; // Import Task interface
 import { AlertTriangle, CheckCircle, Clock, Zap, Brain, FileText, TrendingUp, BarChart3, Loader2 } from 'lucide-react';
-import { useLatestKPIs, useTasks, useReviews, useDigitalAssets } from '../hooks/useSupabaseAPI';
-import { useMemo, useState } from 'react'; // Added useState
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog'; // Added Dialog components
-import { Label } from './ui/label'; // Added Label for dialog content
-
-interface DashboardProps {
-  data: DashboardData;
-  onNavigate: (tab: string, itemId?: string) => void;
-}
-
-export const Dashboard = ({ data, onNavigate }: DashboardProps) => {
-  // State for popups
-  const [selectedTask, setSelectedTask] = useState<any | null>(null);
-  const [selectedAsset, setSelectedAsset] = useState<any | null>(null);
-  const [selectedDataGap, setSelectedDataGap] = useState<string | null>(null);
-
-  // Fetch live data from Supabase
-  const { data: latestKPIs, isLoading: kpisLoading, error: kpisError } = useLatestKPIs();
-  const { data: tasksData, isLoading: tasksLoading, error: tasksError } = useTasks();
-  const { data: reviewsData, isLoading: reviewsLoading, error: reviewsError } = useReviews();
-  const { data: digitalAssetsData, isLoading: digitalAssetsLoading, error: digitalAssetsError } = useDigitalAssets();
-
-  // Helper function to calculate percentage change
-  const calculateChange = (current: number, previous: number) => {
-    if (!previous || previous === 0) return 0;
-    return (((current - previous) / previous) * 100);
-  };
-
-  // Calculate KPI data from live Supabase data
-  const kpiData: KPICard[] = useMemo(() => {
+import { useLatestKPIs, useTasks, useReviews, useDigitalAssets, useUpdateTask } from '../hooks/useSupabaseAPI'; // Added useUpdateTask
+import { useMemo, useState } => {
     if (kpisLoading || tasksLoading || reviewsLoading) {
       return [
         { title: 'Business Profile Views', value: '...', change: 0, trend: 'stable', icon: 'eye' },
@@ -50,11 +22,11 @@ export const Dashboard = ({ data, onNavigate }: DashboardProps) => {
     const bpViewsChange = calculateChange(businessProfileViews?.metric_value || 0, 2500);
     
     const businessProfileActions = latestKPIs?.['Business Profile Actions'] || null;
-    const bpActionsValue = businessProfileActions ? businessProfileActions.metric_value.toLocaleString() : 'N/A';
+    const bpActionsValue = businessProfileActions ? bpActionsValue.metric_value.toLocaleString() : 'N/A';
     const bpActionsChange = calculateChange(businessProfileActions?.metric_value || 0, 300);
 
     const websiteSessions = latestKPIs?.['Website Sessions'] || latestKPIs?.['Website Traffic'] || null;
-    const websiteValue = websiteSessions ? websiteSessions.metric_value.toLocaleString() : 'N/A';
+    const websiteValue = websiteSessions ? websiteValue.metric_value.toLocaleString() : 'N/A';
     const websiteChange = calculateChange(websiteSessions?.metric_value || 0, 1100);
 
     const websiteConversionRate = latestKPIs?.['Website Conversion Rate'] || null;
@@ -141,7 +113,9 @@ export const Dashboard = ({ data, onNavigate }: DashboardProps) => {
         priority: task.priority || 'medium',
         dueDate: task.due_date || new Date().toISOString().split('T')[0],
         completed: task.status === 'completed',
-        aiGenerated: false
+        aiGenerated: false,
+        // Add a mock AI insight for demo purposes
+        ai_insights: task.aiGenerated ? "AI suggests this task is critical for reaching Q4 goals. Focus on optimizing keywords related to local mental health services." : undefined 
       }));
   }, [tasksData]);
 
@@ -206,7 +180,7 @@ export const Dashboard = ({ data, onNavigate }: DashboardProps) => {
     }
   ];
 
-  if (kpisLoading || tasksLoading || reviewsLoading || digitalAssetsLoading) {
+  if (kpisLoading || tasksLoading || reviewsLoading || digitalAssetsLoading || updateTaskMutation.isPending) {
     return (
       <div className="space-y-6 p-6">
         <div className="flex items-center justify-between">
@@ -310,7 +284,7 @@ export const Dashboard = ({ data, onNavigate }: DashboardProps) => {
                 <div 
                   key={task.id} 
                   className="flex items-start space-x-3 p-3 bg-accent/50 rounded-lg cursor-pointer hover:bg-accent transition-colors"
-                  onClick={() => setSelectedTask(task)} // Click to open task detail dialog
+                  onClick={() => setSelectedTask(task)}
                 >
                   <Clock className="h-4 w-4 text-warning mt-0.5" />
                   <div className="flex-1">
@@ -357,7 +331,7 @@ export const Dashboard = ({ data, onNavigate }: DashboardProps) => {
                 <div 
                   key={asset.id} 
                   className="flex items-start space-x-3 p-3 bg-destructive/10 rounded-lg cursor-pointer hover:bg-destructive/20 transition-colors"
-                  onClick={() => setSelectedAsset(asset)} // Click to open asset detail dialog
+                  onClick={() => setSelectedAsset(asset)}
                 >
                   <AlertTriangle className="h-4 w-4 text-destructive mt-0.5" />
                   <div className="flex-1">
@@ -400,7 +374,7 @@ export const Dashboard = ({ data, onNavigate }: DashboardProps) => {
               <div 
                 key={index} 
                 className="flex items-start space-x-3 p-3 bg-warning/10 rounded-lg cursor-pointer hover:bg-warning/20 transition-colors"
-                onClick={() => setSelectedDataGap(gap)} // Click to open data gap detail dialog
+                onClick={() => setSelectedDataGap(gap)}
               >
                 <AlertTriangle className="h-4 w-4 text-warning mt-0.5" />
                 <p className="text-sm text-foreground">{gap}</p>
@@ -481,9 +455,24 @@ export const Dashboard = ({ data, onNavigate }: DashboardProps) => {
                 <Label className="text-right">Status</Label>
                 <div className="col-span-3 text-muted-foreground">{selectedTask.completed ? 'Completed' : 'Pending'}</div>
               </div>
+              {/* NEW: AI Insights section */}
+              {selectedTask.ai_insights && (
+                <div className="grid grid-cols-4 items-start gap-4 pt-4 border-t border-border">
+                  <Label className="text-right">AI Insights</Label>
+                  <div className="col-span-3 text-sm text-muted-foreground bg-accent/20 p-2 rounded-md">
+                    {selectedTask.ai_insights}
+                  </div>
+                </div>
+              )}
             </div>
           )}
-          <div className="flex justify-end">
+          <div className="flex justify-end space-x-2">
+            {selectedTask && !selectedTask.completed && ( // Only show if task is not completed
+              <Button onClick={handleMarkTaskComplete} disabled={updateTaskMutation.isPending}>
+                {updateTaskMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <CheckCircle className="h-4 w-4 mr-2" />}
+                Mark Complete
+              </Button>
+            )}
             <Button onClick={() => onNavigate('tasks', selectedTask?.id)}>View in Task Management</Button>
           </div>
         </DialogContent>
@@ -520,6 +509,19 @@ export const Dashboard = ({ data, onNavigate }: DashboardProps) => {
                   <a href={selectedAsset.url} target="_blank" rel="noopener noreferrer" className="col-span-3 text-blue-500 hover:underline truncate">{selectedAsset.url}</a>
                 </div>
               )}
+               {selectedAsset.key_metrics_json && Object.keys(selectedAsset.key_metrics_json).length > 0 && (
+                <div className="grid grid-cols-4 items-start gap-4 pt-4 border-t border-border">
+                  <Label className="text-right">Key Metrics</Label>
+                  <div className="col-span-3 space-y-1">
+                    {Object.entries(selectedAsset.key_metrics_json).map(([key, value]) => (
+                      <div key={key} className="flex justify-between text-sm text-muted-foreground">
+                        <span>{key}:</span>
+                        <span className="font-medium">{typeof value === 'number' ? value.toLocaleString() : value}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
           <div className="flex justify-end">
@@ -541,7 +543,6 @@ export const Dashboard = ({ data, onNavigate }: DashboardProps) => {
                 <Label className="text-left">Description</Label>
                 <div className="text-muted-foreground">{selectedDataGap}</div>
               </div>
-              {/* Add more details here if dataGaps become dynamic objects */}
               <div className="text-sm text-muted-foreground mt-4">
                 <p>This entry indicates a potential inconsistency or missing data point in your ecosystem.</p>
                 <p>Consider running a System Check for more details.</p>
