@@ -1,3 +1,5 @@
+// obesetomato/dashboard/Dashboard-c1fdb5a0f45fa9f7c956a11b09f4801f23b45082/src/components/AssetLog.tsx
+
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
@@ -17,7 +19,7 @@ import {
 } from './ui/table';
 import { 
   Globe, 
-  Star, 
+  Star, // Change icon for business_profile
   Users, 
   Megaphone,
   ExternalLink,
@@ -38,7 +40,7 @@ interface AssetLogProps {
 
 interface NewDigitalAsset {
   asset_name: string;
-  asset_type: 'gmb' | 'website' | 'social_media' | 'directory' | 'review_platform' | 'advertising';
+  asset_type: 'business_profile' | 'website' | 'social_media' | 'directory' | 'review_platform' | 'advertising'; // <--- Changed 'gmb' to 'business_profile'
   status: 'active' | 'warning' | 'critical' | 'inactive';
   priority: 'high' | 'medium' | 'low';
   url: string;
@@ -63,7 +65,7 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
   const getAssetIcon = (type: string) => {
     switch (type) {
       case 'website': return Globe;
-      case 'gmb': return Star;
+      case 'business_profile': return Star; // Use Star icon for 'business_profile'
       case 'social_media': return Users;
       case 'directory': return Globe;
       case 'advertising': return Megaphone;
@@ -249,8 +251,8 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="business_profile">Business Profile</SelectItem> {/* <--- Changed 'Google My Business' to 'Business Profile' */}
                       <SelectItem value="website">Website</SelectItem>
-                      <SelectItem value="gmb">Google My Business</SelectItem>
                       <SelectItem value="social_media">Social Media</SelectItem>
                       <SelectItem value="directory">Directory</SelectItem>
                       <SelectItem value="review_platform">Review Platform</SelectItem>
