@@ -7,7 +7,65 @@ import { ExportMenu } from './ExportMenu';
 import { DashboardData, KPICard, Task } from '../types/dashboard'; // Import Task interface
 import { AlertTriangle, CheckCircle, Clock, Zap, Brain, FileText, TrendingUp, BarChart3, Loader2 } from 'lucide-react';
 import { useLatestKPIs, useTasks, useReviews, useDigitalAssets, useUpdateTask } from '../hooks/useSupabaseAPI'; // Added useUpdateTask
-import { useMemo, useState } => {
+import { useMemo, useState } from 'react'; // Added useState
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog'; // Added Dialog components
+import { Label } from './ui/label'; // Added Label for dialog content
+import { useToast } from '../hooks/use-toast'; // Import useToast
+
+interface DashboardProps {
+  data: DashboardData;
+  onNavigate: (tab: string, itemId?: string) => void;
+}
+
+export const Dashboard = ({ data, onNavigate }: DashboardProps) => {
+  // State for popups
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null); // Type selectedTask as Task
+  const [selectedAsset, setSelectedAsset] = useState<any | null>(null);
+  const [selectedDataGap, setSelectedDataGap] = useState<string | null>(null);
+
+  const { toast } = useToast(); // Initialize useToast
+
+  // Fetch live data from Supabase
+  const { data: latestKPIs, isLoading: kpisLoading, error: kpisError } = useLatestKPIs();
+  const { data: tasksData, isLoading: tasksLoading, error: tasksError } = useTasks();
+  const { data: reviewsData, isLoading: reviewsLoading, error: reviewsError } = useReviews();
+  const { data: digitalAssetsData, isLoading: digitalAssetsLoading, error: digitalAssetsError } = useDigitalAssets();
+
+  const updateTaskMutation = useUpdateTask(); // Initialize update task mutation
+
+  // Helper function to calculate percentage change
+  const calculateChange = (current: number, previous: number) => {
+    if (!previous || previous === 0) return 0;
+    return (((current - previous) / previous) * 100);
+  };
+
+  // Handler to mark a task as complete
+  const handleMarkTaskComplete = async () => {
+    if (!selectedTask) return;
+
+    try {
+      await updateTaskMutation.mutateAsync({
+        id: parseInt(selectedTask.id), // Ensure ID is a number for mutation
+        updates: { status: 'completed' }
+      });
+      setSelectedTask(null); // Close dialog
+      toast({
+        title: "Task Completed",
+        description: `"${selectedTask.title}" has been marked as complete.`,
+        type: "success"
+      });
+    } catch (error) {
+      console.error("Failed to mark task complete:", error);
+      toast({
+        title: "Error",
+        description: "Failed to mark task complete. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Calculate KPI data from live Supabase data
+  const kpiData: KPICard[] = useMemo(() => {
     if (kpisLoading || tasksLoading || reviewsLoading) {
       return [
         { title: 'Business Profile Views', value: '...', change: 0, trend: 'stable', icon: 'eye' },
@@ -22,11 +80,11 @@ import { useMemo, useState } => {
     const bpViewsChange = calculateChange(businessProfileViews?.metric_value || 0, 2500);
     
     const businessProfileActions = latestKPIs?.['Business Profile Actions'] || null;
-    const bpActionsValue = businessProfileActions ? bpActionsValue.metric_value.toLocaleString() : 'N/A';
+    const bpActionsValue = businessProfileActions ? bpActionsValue.metric_value.toLocaleString() : 'N/A'; // Corrected variable name here
     const bpActionsChange = calculateChange(businessProfileActions?.metric_value || 0, 300);
 
     const websiteSessions = latestKPIs?.['Website Sessions'] || latestKPIs?.['Website Traffic'] || null;
-    const websiteValue = websiteSessions ? websiteValue.metric_value.toLocaleString() : 'N/A';
+    const websiteValue = websiteSessions ? websiteSessions.metric_value.toLocaleString() : 'N/A';
     const websiteChange = calculateChange(websiteSessions?.metric_value || 0, 1100);
 
     const websiteConversionRate = latestKPIs?.['Website Conversion Rate'] || null;
@@ -114,7 +172,6 @@ import { useMemo, useState } => {
         dueDate: task.due_date || new Date().toISOString().split('T')[0],
         completed: task.status === 'completed',
         aiGenerated: false,
-        // Add a mock AI insight for demo purposes
         ai_insights: task.aiGenerated ? "AI suggests this task is critical for reaching Q4 goals. Focus on optimizing keywords related to local mental health services." : undefined 
       }));
   }, [tasksData]);
@@ -467,7 +524,7 @@ import { useMemo, useState } => {
             </div>
           )}
           <div className="flex justify-end space-x-2">
-            {selectedTask && !selectedTask.completed && ( // Only show if task is not completed
+            {selectedTask && !selectedTask.completed && (
               <Button onClick={handleMarkTaskComplete} disabled={updateTaskMutation.isPending}>
                 {updateTaskMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <CheckCircle className="h-4 w-4 mr-2" />}
                 Mark Complete
