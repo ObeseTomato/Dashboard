@@ -19,12 +19,13 @@ import {
   ChevronDown,
   ChevronRight,
   Monitor, 
-  FileText 
+  FileText,
+  Loader2 // Added Loader2 for loading state
 } from 'lucide-react'; 
 import { cn } from '@/lib/utils'; // Import cn
 
 interface VisualEcosystemProps {
-  data: DashboardData; 
+  data: DashboardData; // Still passed for clinic info (static for now)
   onAssetClick: (assetId: string) => void;
   onNavigate?: (tab: string, itemId?: string) => void;
 }
@@ -38,7 +39,7 @@ interface EcosystemNode {
   priority: string;
   x: number;
   y: number;
-  metrics?: Record<string, any>; // Changed from key_metrics_json to metrics for consistency with props
+  metrics?: Record<string, any>; 
   url?: string;
   description?: string;
 }
@@ -72,6 +73,16 @@ export const VisualEcosystem = ({ data, onAssetClick, onNavigate }: VisualEcosys
       case 'critical': return 'text-destructive border-destructive bg-destructive/10';
       case 'inactive': return 'text-muted-foreground border-muted bg-muted/10';
       default: return 'text-muted-foreground border-muted bg-muted/10';
+    }
+  };
+
+  // NEW: Function to get priority-based styling
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'high': return 'border-l-destructive'; // Red border for high priority
+      case 'medium': return 'border-l-warning'; // Yellow border for medium priority
+      case 'low': return 'border-l-primary'; // Green border for low priority
+      default: return 'border-l-muted'; // Grey border for unknown/default
     }
   };
 
@@ -225,9 +236,23 @@ export const VisualEcosystem = ({ data, onAssetClick, onNavigate }: VisualEcosys
       return;
     }
     
+    // For asset nodes, set selectedNode to open the modal
     const asset = digitalAssetsData?.find(a => a.id.toString() === node.id); 
     if (asset) {
-      setSelectedNode(node);
+      // Cast the fetched asset data to EcosystemNode structure for the modal
+      setSelectedNode({
+        id: asset.id.toString(),
+        name: asset.asset_name,
+        type: asset.asset_type,
+        category: node.category, // Keep the category from the map node
+        status: asset.status,
+        priority: asset.priority,
+        x: node.x, y: node.y, // Keep map coordinates
+        metrics: asset.key_metrics_json, // Ensure metrics are passed
+        url: asset.url || '',
+        description: `${asset.asset_type ? asset.asset_type.replace('_', ' ') : 'Asset'} with ${asset.status} status`
+      });
+      // Also call the prop function if needed for parent component logic
       onAssetClick(node.id);
     }
   };
@@ -312,7 +337,6 @@ export const VisualEcosystem = ({ data, onAssetClick, onNavigate }: VisualEcosys
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {Object.entries(groupedAssets).map(([type, assets]) => {
             const Icon = getAssetIcon(type);
-            // Corrected access to type name. 'type' here is the string key from groupedAssets
             const typeLabel = type ? type.replace('_', ' ').toUpperCase() : 'GENERAL'; 
             
             return (
@@ -331,11 +355,28 @@ export const VisualEcosystem = ({ data, onAssetClick, onNavigate }: VisualEcosys
                     return (
                       <div 
                         key={asset.id}
+                        // NEW: Make asset card clickable and apply priority color
                         className={cn(
-                          "p-3 rounded-lg border cursor-pointer transition-all duration-200 hover:scale-105",
-                          getStatusColor(asset.status)
+                          "p-3 pr-4 rounded-lg border-l-4 cursor-pointer transition-all duration-200 hover:scale-105", // Added border-l-4 for priority color
+                          getStatusColor(asset.status), // Status background/text/border
+                          getPriorityColor(asset.priority) // Priority left border color
                         )}
-                        onClick={() => onAssetClick(asset.id.toString())}
+                        onClick={() => {
+                          // When clicked, set selectedNode to open the modal (similar to map node click)
+                          setSelectedNode({
+                            id: asset.id.toString(),
+                            name: asset.asset_name,
+                            type: asset.asset_type,
+                            category: typeLabel, // Use the displayed category name
+                            status: asset.status,
+                            priority: asset.priority,
+                            x: 0, y: 0, // Placeholder coords, not relevant for overview modal
+                            metrics: asset.key_metrics_json,
+                            url: asset.url || '',
+                            description: `${asset.asset_type ? asset.asset_type.replace('_', ' ') : 'Asset'} with ${asset.status} status`
+                          });
+                          onAssetClick(asset.id.toString());
+                        }}
                       >
                         <div className="flex items-center justify-between mb-2">
                           <h4 className="font-medium text-sm">{asset.asset_name}</h4>
@@ -358,7 +399,7 @@ export const VisualEcosystem = ({ data, onAssetClick, onNavigate }: VisualEcosys
                         {asset.key_metrics_json && Object.keys(asset.key_metrics_json).length > 0 ? (
                           <div className="mt-2 pt-2 border-t border-current/20">
                             <div className="grid grid-cols-2 gap-1 text-xs">
-                              {Object.entries(asset.key_metrics_json).map(([key, value]) => (
+                              {Object.entries(asset.key_metrics_json).slice(0, 2).map(([key, value]) => (
                                 <div key={key} className="flex justify-between">
                                   <span className="opacity-75">{key}:</span>
                                   <span className="font-medium">{typeof value === 'number' ? value.toLocaleString() : value}</span>
@@ -376,7 +417,7 @@ export const VisualEcosystem = ({ data, onAssetClick, onNavigate }: VisualEcosys
                             size="sm"
                             className="w-full mt-2 h-6 text-xs"
                             onClick={(e) => {
-                              e.stopPropagation();
+                              e.stopPropagation(); // Prevent card click when clicking Visit
                               window.open(asset.url, '_blank');
                             }}
                           >
@@ -582,7 +623,7 @@ export const VisualEcosystem = ({ data, onAssetClick, onNavigate }: VisualEcosys
                             </div>
                             {node.metrics && Object.keys(node.metrics).length > 0 && (
                                 <div className="mt-1 border-t border-border pt-1">
-                                    {Object.entries(node.metrics).slice(0, 2).map(([key, value]) => (
+                                    {Object.entries(node.metrics).map(([key, value]) => (
                                         <p key={key} className="flex justify-between text-[0.6rem] capitalize">
                                             <span>{key}:</span> <span className="font-medium">{typeof value === 'number' ? value.toLocaleString() : value}</span>
                                         </p>
