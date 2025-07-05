@@ -228,7 +228,7 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
 
   const assets = assetsData || [];
   const groupedAssets = assets.reduce((groups: any, asset: any) => {
-    const category = asset.asset_type.replace('_', ' ').toUpperCase();
+    const category = asset.asset_type ? asset.asset_type.replace('_', ' ').toUpperCase() : 'GENERAL'; // Handle potential null/undefined asset_type
     if (!groups[category]) {
       groups[category] = [];
     }
@@ -392,14 +392,14 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
               </TableHeader>
               <TableBody>
                 {categoryAssets.map((asset: DigitalAsset) => {
-                  const Icon = getAssetIcon(asset.asset_type);
+                  const Icon = getAssetIcon(asset.asset_type || ''); // Ensure type is string for icon
                   
                   return (
                     <TableRow 
                       key={asset.id} 
                       className={cn(
                         "hover:bg-muted/50 cursor-pointer border-l-4", 
-                        getPriorityBorderColor(asset.priority || 'medium') // Default to medium if null
+                        getPriorityBorderColor(asset.priority || 'medium') 
                       )}
                       onClick={() => setSelectedAsset(asset)} 
                     >
@@ -407,7 +407,7 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
                         <Icon className="h-4 w-4 text-primary" />
                       </TableCell>
                       <TableCell className="align-middle"> 
-                        <div className="flex flex-col min-w-0"> {/* Added min-w-0 for truncation */}
+                        <div className="flex flex-col min-w-0"> 
                           <p className="font-medium">{asset.asset_name}</p>
                           {asset.url && (
                             <p className="text-xs text-muted-foreground truncate max-w-64">
@@ -417,10 +417,10 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
                         </div>
                       </TableCell>
                       <TableCell className="align-middle"> 
-                        {getStatusBadge(asset.status || '')} {/* Ensure status is string */}
+                        {getStatusBadge(asset.status || '')} 
                       </TableCell>
                       <TableCell className="align-middle"> 
-                        {getPriorityBadge(asset.priority || 'medium')} {/* Default to medium if null */}
+                        {getPriorityBadge(asset.priority || 'medium')} 
                       </TableCell>
                       <TableCell className="align-middle"> 
                         <div className="flex items-center space-x-1 text-sm text-muted-foreground">
@@ -485,7 +485,7 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
             <DialogTitle className="flex items-center gap-2">
               {selectedAsset && (
                 <>
-                  {React.createElement(getAssetIcon(selectedAsset.asset_type || ''), { className: "h-5 w-5" })} {/* Ensure asset_type is string */}
+                  {React.createElement(getAssetIcon(selectedAsset.asset_type || ''), { className: "h-5 w-5" })} 
                   {selectedAsset.asset_name}
                 </>
               )}
