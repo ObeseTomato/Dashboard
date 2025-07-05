@@ -1,4 +1,3 @@
-// obesetomato/dashboard/Dashboard-c1fdb5a0f45fa9f7c956a11b09f4801f23b45082/src/components/Dashboard.tsx
 import { StatCard } from './StatCard';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
@@ -258,8 +257,21 @@ export const Dashboard = ({ data, onNavigate }: DashboardProps) => {
           <StatCard 
             key={index} 
             data={kpi} 
-            onClick={() => onNavigate('performance', kpi.title)} // Make card clickable, navigate to performance with KPI title
-            clickable={true} // Add clickable prop if StatCard supports it
+            onClick={() => {
+                // Determine navigation based on KPI title
+                if (kpi.title === 'Business Profile Views') {
+                    onNavigate('performance', 'Business Profiles'); 
+                } else if (kpi.title === 'Website Sessions') {
+                    onNavigate('performance', 'Website Analytics'); 
+                } else if (kpi.title === 'Review Rating') {
+                    onNavigate('assets', 'review_platform'); // Navigate to Asset Log, filter by review platform
+                } else if (kpi.title === 'Task Completion') {
+                    onNavigate('tasks', 'overdue_tasks'); // Navigate to Tasks, filter by overdue
+                } else {
+                    onNavigate('performance', kpi.title); // Fallback to general performance navigation
+                }
+            }}
+            clickable={true} 
           />
         ))}
       </div>
