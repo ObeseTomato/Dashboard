@@ -399,7 +399,7 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
                       key={asset.id} 
                       className={cn(
                         "hover:bg-muted/50 cursor-pointer border-l-4", 
-                        getPriorityBorderColor(asset.priority) 
+                        getPriorityBorderColor(asset.priority || 'medium') // Default to medium if null
                       )}
                       onClick={() => setSelectedAsset(asset)} 
                     >
@@ -407,7 +407,7 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
                         <Icon className="h-4 w-4 text-primary" />
                       </TableCell>
                       <TableCell className="align-middle"> 
-                        <div>
+                        <div className="flex flex-col min-w-0"> {/* Added min-w-0 for truncation */}
                           <p className="font-medium">{asset.asset_name}</p>
                           {asset.url && (
                             <p className="text-xs text-muted-foreground truncate max-w-64">
@@ -417,10 +417,10 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
                         </div>
                       </TableCell>
                       <TableCell className="align-middle"> 
-                        {getStatusBadge(asset.status)}
+                        {getStatusBadge(asset.status || '')} {/* Ensure status is string */}
                       </TableCell>
                       <TableCell className="align-middle"> 
-                        {getPriorityBadge(asset.priority)}
+                        {getPriorityBadge(asset.priority || 'medium')} {/* Default to medium if null */}
                       </TableCell>
                       <TableCell className="align-middle"> 
                         <div className="flex items-center space-x-1 text-sm text-muted-foreground">
@@ -485,7 +485,7 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
             <DialogTitle className="flex items-center gap-2">
               {selectedAsset && (
                 <>
-                  {React.createElement(getAssetIcon(selectedAsset.asset_type), { className: "h-5 w-5" })}
+                  {React.createElement(getAssetIcon(selectedAsset.asset_type || ''), { className: "h-5 w-5" })} {/* Ensure asset_type is string */}
                   {selectedAsset.asset_name}
                 </>
               )}
@@ -496,7 +496,7 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
             <div className="space-y-6 py-4"> 
               {/* Status and Priority */}
               <div className="flex items-center gap-4">
-                <Badge className={getStatusBadge(selectedAsset.status || '')}> {/* Ensure status is string */}
+                <Badge className={getStatusBadge(selectedAsset.status || '')}> 
                   {selectedAsset.status}
                 </Badge>
                 <Badge variant={selectedAsset.priority === 'high' ? 'destructive' : 
