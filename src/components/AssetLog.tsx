@@ -382,11 +382,11 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-12"></TableHead>
-                  <TableHead className="w-[180px]">Asset Name</TableHead> {/* Fixed width */}
-                  <TableHead className="w-[80px]">Status</TableHead>    {/* Fixed width */}
-                  <TableHead className="w-[80px]">Priority</TableHead>   {/* Fixed width */}
-                  <TableHead className="w-[120px]">Last Updated</TableHead> {/* Fixed width */}
-                  <TableHead className="w-[150px]">Key Metrics</TableHead> {/* Fixed width */}
+                  <TableHead className="w-[180px]">Asset Name</TableHead> 
+                  <TableHead className="w-[80px]">Status</TableHead>    
+                  <TableHead className="w-[80px]">Priority</TableHead>   
+                  <TableHead className="w-[120px]">Last Updated</TableHead> 
+                  <TableHead className="w-[150px]">Key Metrics</TableHead> 
                   <TableHead className="w-32">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -403,32 +403,32 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
                       )}
                       onClick={() => setSelectedAsset(asset)} 
                     >
-                      <TableCell className="align-top"> {/* Changed to align-top for consistency with multi-line content */}
+                      <TableCell className="align-top"> 
                         <Icon className="h-4 w-4 text-primary" />
                       </TableCell>
-                      <TableCell className="align-top"> {/* Changed to align-top */}
+                      <TableCell className="align-top"> 
                         <div className="flex flex-col min-w-0"> 
                           <p className="font-medium">{asset.asset_name}</p>
                           {asset.url && (
-                            <p className="text-xs text-muted-foreground truncate max-w-[150px]"> {/* Adjusted max-w for truncation */}
+                            <p className="text-xs text-muted-foreground truncate max-w-[150px]"> 
                               {asset.url}
                             </p>
                           )}
                         </div>
                       </TableCell>
-                      <TableCell className="align-top"> {/* Changed to align-top */}
+                      <TableCell className="align-top"> 
                         {getStatusBadge(asset.status || '')} 
                       </TableCell>
-                      <TableCell className="align-top"> {/* Changed to align-top */}
+                      <TableCell className="align-top"> 
                         {getPriorityBadge(asset.priority || 'medium')} 
                       </TableCell>
-                      <TableCell className="align-top"> {/* Changed to align-top */}
+                      <TableCell className="align-top"> 
                         <div className="flex items-center space-x-1 text-sm text-muted-foreground">
                           <Calendar className="h-3 w-3" />
                           <span>{asset.last_updated ? new Date(asset.last_updated).toLocaleDateString() : 'N/A'}</span>
                         </div>
                       </TableCell>
-                      <TableCell className="align-top"> {/* Changed to align-top */}
+                      <TableCell className="align-top"> 
                         {asset.key_metrics_json && Object.keys(asset.key_metrics_json).length > 0 ? (
                           <div className="space-y-1">
                             {Object.entries(asset.key_metrics_json).slice(0, 2).map(([key, value]: [string, any]) => (
@@ -443,7 +443,7 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
                           <span className="text-muted-foreground text-sm">No metrics</span>
                         )}
                       </TableCell>
-                      <TableCell className="align-top"> {/* Changed to align-top */}
+                      <TableCell className="align-top"> 
                         <div className="flex space-x-1">
                            <Button
                               variant="ghost"
@@ -478,9 +478,9 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
         </Card>
       ))}
 
-      {/* Asset Detail Dialog (Now used by row click and explicit View button) */}
+      {/* Asset Detail Dialog (Now with expanded content for Business Profiles) */}
       <Dialog open={!!selectedAsset} onOpenChange={() => setSelectedAsset(null)}>
-        <DialogContent className="max-w-2xl"> 
+        <DialogContent className="max-w-3xl"> {/* Increased max-w for more content */}
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               {selectedAsset && (
@@ -493,77 +493,245 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
           </DialogHeader>
           
           {selectedAsset && (
-            <div className="space-y-6 py-4"> 
-              {/* Status and Priority */}
-              <div className="flex items-center gap-4">
-                <Badge className={getStatusBadge(selectedAsset.status || '')}> 
-                  {selectedAsset.status}
-                </Badge>
-                <Badge variant={selectedAsset.priority === 'high' ? 'destructive' : 
-                               selectedAsset.priority === 'medium' ? 'default' : 'secondary'}>
-                  {selectedAsset.priority} priority
-                </Badge>
-              </div>
-
-              {/* URL */}
-              {selectedAsset.url && (
-                <div>
-                  <h4 className="font-semibold mb-2">URL</h4>
-                  <a href={selectedAsset.url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline break-all">
-                    {selectedAsset.url}
-                  </a>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4"> {/* Use grid for main layout */}
+              {/* Column 1 */}
+              <div className="space-y-6">
+                {/* Status and Priority */}
+                <div className="flex items-center gap-4">
+                  <Badge className={getStatusBadge(selectedAsset.status || '')}> 
+                    {selectedAsset.status}
+                  </Badge>
+                  <Badge variant={selectedAsset.priority === 'high' ? 'destructive' : 
+                                 selectedAsset.priority === 'medium' ? 'default' : 'secondary'}>
+                    {selectedAsset.priority} priority
+                  </Badge>
                 </div>
-              )}
 
-              {/* Metrics */}
-              {selectedAsset.key_metrics_json && Object.keys(selectedAsset.key_metrics_json).length > 0 && (
-                <div>
-                  <h4 className="font-semibold mb-3">Performance Metrics</h4>
-                  <div className="grid grid-cols-2 gap-4">
-                    {Object.entries(selectedAsset.key_metrics_json).map(([key, value]) => (
-                      <div key={key} className="bg-muted/50 p-3 rounded-lg">
-                        <div className="text-sm text-muted-foreground">{key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</div> 
-                        <div className="text-lg font-semibold">
-                          {typeof value === 'number' ? value.toLocaleString() : value}
+                {/* URL */}
+                {selectedAsset.url && (
+                  <div>
+                    <h4 className="font-semibold mb-2">URL</h4>
+                    <a href={selectedAsset.url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline break-all">
+                      {selectedAsset.url}
+                    </a>
+                  </div>
+                )}
+
+                {/* Performance Metrics (Generic from key_metrics_json) */}
+                {selectedAsset.key_metrics_json && Object.keys(selectedAsset.key_metrics_json).length > 0 && (
+                  <div>
+                    <h4 className="font-semibold mb-3">Performance Metrics</h4>
+                    <div className="grid grid-cols-2 gap-4">
+                      {Object.entries(selectedAsset.key_metrics_json).map(([key, value]) => (
+                        <div key={key} className="bg-muted/50 p-3 rounded-lg">
+                          <div className="text-sm text-muted-foreground">{key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</div> 
+                          <div className="text-lg font-semibold">
+                            {typeof value === 'number' ? value.toLocaleString() : value}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* General Info */}
+                <div>
+                  <h4 className="font-semibold mb-2">General Information</h4>
+                  <div className="grid grid-cols-2 gap-2 text-sm text-muted-foreground">
+                    <div><strong>Type:</strong> {selectedAsset.asset_type ? selectedAsset.asset_type.replace(/_/g, ' ').toUpperCase() : 'N/A'}</div>
+                    <div><strong>Platform ID:</strong> {selectedAsset.platform_id_external || 'N/A'}</div>
+                    <div><strong>Created:</strong> {selectedAsset.created_at ? new Date(selectedAsset.created_at).toLocaleDateString() : 'N/A'}</div>
+                    <div><strong>Last Updated:</strong> {selectedAsset.updated_at ? new Date(selectedAsset.updated_at).toLocaleDateString() : (selectedAsset.created_at ? new Date(selectedAsset.created_at).toLocaleDateString() : 'N/A')}</div>
                   </div>
                 </div>
-              )}
+              </div>
 
-              {/* General Info (from DigitalAsset schema) */}
-              <div>
-                <h4 className="font-semibold mb-2">General Information</h4>
-                <div className="grid grid-cols-2 gap-2 text-sm text-muted-foreground">
-                  <div><strong>Type:</strong> {selectedAsset.asset_type ? selectedAsset.asset_type.replace(/_/g, ' ').toUpperCase() : 'N/A'}</div>
-                  <div><strong>Platform ID:</strong> {selectedAsset.platform_id_external || 'N/A'}</div>
-                  <div><strong>Created:</strong> {selectedAsset.created_at ? new Date(selectedAsset.created_at).toLocaleDateString() : 'N/A'}</div>
-                  <div><strong>Last Updated:</strong> {selectedAsset.updated_at ? new Date(selectedAsset.updated_at).toLocaleDateString() : (selectedAsset.created_at ? new Date(selectedAsset.created_at).toLocaleDateString() : 'N/A')}</div>
+              {/* Column 2: Specific GBP Details (if asset_type is business_profile) */}
+              {selectedAsset.asset_type === 'business_profile' && selectedAsset.key_metrics_json && (
+                <div className="space-y-6">
+                  {/* Business Information */}
+                  {selectedAsset.key_metrics_json.businessInformation && (
+                    <div>
+                      <h4 className="font-semibold mb-2">Business Information</h4>
+                      <div className="text-sm text-muted-foreground space-y-1">
+                        {selectedAsset.key_metrics_json.businessInformation.primaryCategory && (
+                          <p><strong>Primary Category:</strong> {selectedAsset.key_metrics_json.businessInformation.primaryCategory}</p>
+                        )}
+                        {selectedAsset.key_metrics_json.businessInformation.additionalCategories?.length > 0 && (
+                          <p><strong>Additional Categories:</strong> {selectedAsset.key_metrics_json.businessInformation.additionalCategories.join(', ')}</p>
+                        )}
+                        {selectedAsset.key_metrics_json.description && (
+                           <p><strong>Description:</strong> {selectedAsset.key_metrics_json.description}</p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Contact & Socials */}
+                  {selectedAsset.key_metrics_json.contactSocials && (
+                    <div>
+                      <h4 className="font-semibold mb-2">Contact & Socials</h4>
+                      <div className="text-sm text-muted-foreground space-y-1">
+                        {selectedAsset.key_metrics_json.contactSocials.phoneNumber && (
+                          <p><strong>Phone:</strong> {selectedAsset.key_metrics_json.contactSocials.phoneNumber}</p>
+                        )}
+                        {selectedAsset.key_metrics_json.contactSocials.website && (
+                          <p><strong>Website:</strong> <a href={selectedAsset.key_metrics_json.contactSocials.website} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">{selectedAsset.key_metrics_json.contactSocials.website}</a></p>
+                        )}
+                        {selectedAsset.key_metrics_json.contactSocials.facebook && (
+                          <p><strong>Facebook:</strong> <a href={selectedAsset.key_metrics_json.contactSocials.facebook} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">{selectedAsset.key_metrics_json.contactSocials.facebook}</a></p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Location and Areas */}
+                  {selectedAsset.key_metrics_json.locationAreas && (
+                    <div>
+                      <h4 className="font-semibold mb-2">Location and Areas</h4>
+                      <div className="text-sm text-muted-foreground space-y-1">
+                        {selectedAsset.key_metrics_json.locationAreas.businessLocation && (
+                          <p><strong>Location:</strong> {selectedAsset.key_metrics_json.locationAreas.businessLocation}</p>
+                        )}
+                        {selectedAsset.key_metrics_json.locationAreas.serviceAreas?.length > 0 && (
+                          <p><strong>Service Areas:</strong> {selectedAsset.key_metrics_json.locationAreas.serviceAreas.join(', ')}</p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Business Hours */}
+                  {selectedAsset.key_metrics_json.businessHours && (
+                    <div>
+                      <h4 className="font-semibold mb-2">Business Hours</h4>
+                      <div className="text-sm text-muted-foreground space-y-1">
+                        {Object.entries(selectedAsset.key_metrics_json.businessHours).map(([day, hours]) => (
+                          <p key={day}><strong>{day}:</strong> {hours}</p>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Attributes & Accessibility */}
+                  {selectedAsset.key_metrics_json.attributesAccessibility && (
+                    <div>
+                      <h4 className="font-semibold mb-2">Attributes & Accessibility</h4>
+                      <div className="text-sm text-muted-foreground space-y-1">
+                        {selectedAsset.key_metrics_json.attributesAccessibility.fromTheBusiness?.length > 0 && (
+                          <p><strong>From the business:</strong> {selectedAsset.key_metrics_json.attributesAccessibility.fromTheBusiness.join(', ')}</p>
+                        )}
+                        {selectedAsset.key_metrics_json.attributesAccessibility.accessibility?.length > 0 && (
+                          <p><strong>Accessibility:</strong> {selectedAsset.key_metrics_json.attributesAccessibility.accessibility.join(', ')}</p>
+                        )}
+                        {selectedAsset.key_metrics_json.attributesAccessibility.amenities?.length > 0 && (
+                          <p><strong>Amenities:</strong> {selectedAsset.key_metrics_json.attributesAccessibility.amenities.join(', ')}</p>
+                        )}
+                        {selectedAsset.key_metrics_json.attributesAccessibility.crowd?.length > 0 && (
+                          <p><strong>Crowd:</strong> {selectedAsset.key_metrics_json.attributesAccessibility.crowd.join(', ')}</p>
+                        )}
+                        {selectedAsset.key_metrics_json.attributesAccessibility.parking?.length > 0 && (
+                          <p><strong>Parking:</strong> {selectedAsset.key_metrics_json.attributesAccessibility.parking.join(', ')}</p>
+                        )}
+                        {selectedAsset.key_metrics_json.attributesAccessibility.planning?.length > 0 && (
+                          <p><strong>Planning:</strong> {selectedAsset.key_metrics_json.attributesAccessibility.planning.join(', ')}</p>
+                        )}
+                        {selectedAsset.key_metrics_json.attributesAccessibility.serviceOptions?.length > 0 && (
+                          <p><strong>Service options:</strong> {selectedAsset.key_metrics_json.attributesAccessibility.serviceOptions.join(', ')}</p>
+                        )}
+                        {selectedAsset.key_metrics_json.attributesAccessibility.languages?.length > 0 && (
+                          <p><strong>Languages:</strong> {selectedAsset.key_metrics_json.attributesAccessibility.languages.join(', ')}</p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Services */}
+                  {selectedAsset.key_metrics_json.services && (
+                    <div>
+                      <h4 className="font-semibold mb-2">Services</h4>
+                      <div className="text-sm text-muted-foreground space-y-2">
+                        {selectedAsset.key_metrics_json.services.primaryCategory && (
+                           <div>
+                             <p className="font-medium text-foreground">{selectedAsset.key_metrics_json.services.primaryCategory.name}:</p>
+                             <ul className="list-disc pl-5">
+                               {selectedAsset.key_metrics_json.services.primaryCategory.items?.map((item: any, idx: number) => (
+                                 <li key={idx}><p>{item.name}: {item.description}</p></li>
+                               ))}
+                             </ul>
+                           </div>
+                        )}
+                        {selectedAsset.key_metrics_json.services.additionalCategories?.map((cat: any, cIdx: number) => (
+                          <div key={cIdx}>
+                            <p className="font-medium text-foreground">{cat.name}:</p>
+                            <ul className="list-disc pl-5">
+                              {cat.items?.map((item: any, idx: number) => (
+                                <li key={idx}><p>{item.name}: {item.description}</p></li>
+                              ))}
+                            </ul>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Q&A */}
+                  {selectedAsset.key_metrics_json.qa?.length > 0 && (
+                    <div>
+                      <h4 className="font-semibold mb-2">Q&A</h4>
+                      <div className="text-sm text-muted-foreground space-y-2">
+                        {selectedAsset.key_metrics_json.qa.map((item: any, idx: number) => (
+                          <div key={idx}>
+                            <p className="font-medium text-foreground">Q: {item.question}</p>
+                            <p className="ml-4">A: {item.answer}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Posts */}
+                  {selectedAsset.key_metrics_json.posts?.length > 0 && (
+                    <div>
+                      <h4 className="font-semibold mb-2">Posts</h4>
+                      <div className="text-sm text-muted-foreground space-y-3">
+                        {selectedAsset.key_metrics_json.posts.map((post: any, idx: number) => (
+                          <div key={idx} className="border-b border-border pb-2 last:border-b-0">
+                            <p className="font-medium text-foreground">Update: {post.date}</p>
+                            <p>{post.description}</p>
+                            {post.button?.url && (
+                              <Button variant="link" size="sm" className="h-6 px-0 mt-1">
+                                <a href={post.button.url} target="_blank" rel="noopener noreferrer">{post.button.text || 'View Post'}</a>
+                              </Button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </div>
-
-              {/* Actions */}
-              <div className="flex justify-end gap-2 mt-6"> 
-                <Button 
-                    variant="secondary" 
-                    onClick={handleEditAsset} 
-                >
-                    <Pencil className="h-4 w-4 mr-2" />
-                    Edit Asset
-                </Button>
-                {selectedAsset.url && (
-                  <Button
-                    onClick={() => window.open(selectedAsset.url, '_blank')}
-                    className="flex items-center gap-2"
-                  >
-                    <ExternalLink className="h-4 w-4" />
-                    Visit Asset
-                  </Button>
-                )}
-              </div>
+              )}
             </div>
           )}
+
+          {/* Dialog Actions */}
+          <div className="flex justify-end gap-2 mt-6"> 
+            <Button 
+                variant="secondary" 
+                onClick={handleEditAsset} 
+            >
+                <Pencil className="h-4 w-4 mr-2" />
+                Edit Asset
+            </Button>
+            {selectedAsset?.url && (
+              <Button
+                onClick={() => window.open(selectedAsset.url || '', '_blank')}
+                className="flex items-center gap-2"
+              >
+                <ExternalLink className="h-4 w-4" />
+                Visit Asset
+              </Button>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </div>
