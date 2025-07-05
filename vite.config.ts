@@ -8,7 +8,7 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
-    // The proxy section has been removed
+    // The proxy has been removed, as the frontend will now call Supabase directly.
   },
   plugins: [
     react(),
