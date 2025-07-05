@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 import { DashboardData } from '../types/dashboard';
 import { 
   Globe, 
-  Star, // Change icon for business_profile
+  Star, 
   Users, 
   Instagram, 
   Facebook, 
@@ -54,12 +54,15 @@ interface EcosystemNode {
 export const VisualEcosystem = ({ data, onAssetClick, onNavigate }: VisualEcosystemProps) => {
   const [selectedNode, setSelectedNode] = useState<EcosystemNode | null>(null);
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
-  const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set());
+  const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(() => new Set()); // Initialize with a new Set directly
+
+  // Console log the state every render
+  console.log("Current collapsedCategories state:", Array.from(collapsedCategories));
 
   const getAssetIcon = (type: string) => {
     switch (type) {
       case 'website': return Globe;
-      case 'business_profile': return Star; // Use Star icon for 'business_profile'
+      case 'business_profile': return Star; 
       case 'social_media': return Users;
       case 'directory': return Globe;
       case 'advertising': return Megaphone;
@@ -88,23 +91,31 @@ export const VisualEcosystem = ({ data, onAssetClick, onNavigate }: VisualEcosys
   };
 
   const toggleCategory = (categoryId: string) => {
-    const newCollapsed = new Set(collapsedCategories);
-    if (newCollapsed.has(categoryId)) {
-      newCollapsed.delete(categoryId);
-    } else {
-      newCollapsed.add(categoryId);
-    }
-    setCollapsedCategories(newCollapsed);
+    console.log("toggleCategory called for:", categoryId);
+    setCollapsedCategories(prevCollapsed => {
+      const newCollapsed = new Set(prevCollapsed); // Always create a new Set for immutability
+      if (newCollapsed.has(categoryId)) {
+        console.log("Collapsing category:", categoryId);
+        newCollapsed.delete(categoryId);
+      } else {
+        console.log("Expanding category:", categoryId);
+        newCollapsed.add(categoryId);
+      }
+      console.log("New collapsedCategories state after toggle:", Array.from(newCollapsed));
+      return newCollapsed;
+    });
   };
 
 const createEcosystemNodes = (): EcosystemNode[] => {
-    // Use container dimensions for proper centering
+    // Console log data.assets before processing
+    console.log("Data assets for node creation:", data.assets);
+
     const containerWidth = 1000;
     const containerHeight = 800;
-    const centerX = containerWidth / 2; // 500
-    const centerY = containerHeight / 2; // 400
-    const categoryRadius = 200; // Distance from center to categories
-    const assetRadius = 100; // Distance from category to assets
+    const centerX = containerWidth / 2;
+    const centerY = containerHeight / 2;
+    const categoryRadius = 200;
+    const assetRadius = 100;
     
     const nodes: EcosystemNode[] = [];
     
@@ -121,42 +132,41 @@ const createEcosystemNodes = (): EcosystemNode[] => {
       description: 'Primary digital hub for all ecosystem activities'
     });
 
-    // Create category groups with better spacing
     const categories = [
       {
-        name: 'Business Profiles', // <--- Changed category name
-        assets: data.assets.filter(a => a.asset_type === 'business_profile'), // <--- Filter by new type
+        name: 'Business Profiles',
+        assets: data.assets.filter(a => a.type === 'business_profile'),
         angle: 0,
         color: '#10B981'
       },
       {
-        name: 'Website Platforms', // <--- New category name
-        assets: data.assets.filter(a => a.asset_type === 'website'), // <--- Filter by website type
-        angle: Math.PI / 3, // Adjusted angle
-        color: '#3B82F6' // Adjusted color
+        name: 'Website Platforms',
+        assets: data.assets.filter(a => a.type === 'website'),
+        angle: Math.PI / 3,
+        color: '#3B82F6'
       },
       {
         name: 'Social Media',
-        assets: data.assets.filter(a => a.asset_type === 'social_media'),
-        angle: 2 * Math.PI / 3, // Adjusted angle
+        assets: data.assets.filter(a => a.type === 'social_media'),
+        angle: 2 * Math.PI / 3,
         color: '#8B5CF6'
       },
       {
         name: 'Directories & Reviews',
-        assets: data.assets.filter(a => a.asset_type === 'directory' || a.asset_type === 'review_platform'),
-        angle: Math.PI, // Adjusted angle
+        assets: data.assets.filter(a => a.type === 'directory' || a.type === 'review_platform'),
+        angle: Math.PI,
         color: '#F59E0B'
       },
       {
         name: 'Advertising',
-        assets: data.assets.filter(a => a.asset_type === 'advertising'),
-        angle: 4 * Math.PI / 3, // Adjusted angle
+        assets: data.assets.filter(a => a.type === 'advertising'),
+        angle: 4 * Math.PI / 3,
         color: '#EF4444'
       },
       {
-        name: 'Content & Tools', // <--- Combined existing categories
-        assets: data.assets.filter(a => ['content_creation', 'analysis'].includes(a.asset_type as any)), // Assuming 'content_creation' and 'analysis' might be asset types eventually, or you'd manage them differently
-        angle: 5 * Math.PI / 3, // Adjusted angle
+        name: 'Content & Tools', 
+        assets: data.assets.filter(a => ['content_creation', 'analysis'].includes(a.type as any)),
+        angle: 5 * Math.PI / 3,
         color: '#6366F1'
       }
     ];
@@ -165,7 +175,6 @@ const createEcosystemNodes = (): EcosystemNode[] => {
       const categoryX = centerX + Math.cos(category.angle) * categoryRadius;
       const categoryY = centerY + Math.sin(category.angle) * categoryRadius;
       
-      // Add category node
       const categoryId = `category-${categoryIndex}`;
       nodes.push({
         id: categoryId,
@@ -179,12 +188,13 @@ const createEcosystemNodes = (): EcosystemNode[] => {
         description: `Category containing ${category.assets.length} assets`
       });
 
-      // Only add assets if category is not collapsed
+      // Console log if category is collapsed and how many assets
+      console.log(`Category: ${category.name}, ID: ${categoryId}, Collapsed: ${collapsedCategories.has(categoryId)}, Assets Count: ${category.assets.length}`);
+
       if (!collapsedCategories.has(categoryId) && category.assets.length > 0) {
-        // Calculate positions for assets around the category with better spacing
         const assetsCount = category.assets.length;
-        const angleStep = assetsCount > 1 ? (Math.PI / 2) / (assetsCount - 1) : 0; // Spread over 90 degrees
-        const startAngle = category.angle - Math.PI / 4; // Start 45 degrees before category angle
+        const angleStep = assetsCount > 1 ? (Math.PI / 2) / (assetsCount - 1) : 0;
+        const startAngle = category.angle - Math.PI / 4;
         
         category.assets.forEach((asset, assetIndex) => {
           const assetAngle = startAngle + (assetIndex * angleStep);
@@ -193,20 +203,21 @@ const createEcosystemNodes = (): EcosystemNode[] => {
           
           nodes.push({
             id: asset.id.toString(),
-            name: asset.name, // Use asset.name directly
-            type: asset.type, // Use asset.type
+            name: asset.name,
+            type: asset.type,
             category: category.name,
             status: asset.status,
             priority: asset.priority,
             x: assetX,
             y: assetY,
-            metrics: asset.metrics, // Use asset.metrics
+            metrics: asset.metrics,
             description: `${asset.type ? asset.type.replace('_', ' ') : 'Asset'} with ${asset.status} status`
           });
         });
       }
     });
 
+    console.log("Final nodes generated:", nodes.filter(n => n.type !== 'category' && n.type !== 'hub').map(n => ({id: n.id, name: n.name, category: n.category}))); // Log generated assets
     return nodes;
   };
 
@@ -214,8 +225,9 @@ const createEcosystemNodes = (): EcosystemNode[] => {
   const hubNode = ecosystemNodes.find(n => n.id === 'hub');
 
   const handleNodeClick = (node: EcosystemNode) => {
+    console.log("Node clicked:", node.id, "Type:", node.type);
     if (node.type === 'hub') {
-      return; // Don't open details for hub
+      return; 
     }
     
     if (node.type === 'category') {
@@ -223,28 +235,23 @@ const createEcosystemNodes = (): EcosystemNode[] => {
       return;
     }
     
-    // Find the actual asset from data
     const asset = data.assets.find(a => a.id.toString() === node.id);
     if (asset) {
       setSelectedNode(node);
-      // Also trigger the parent callback for navigation
       onAssetClick(node.id);
     }
   };
 
   const handleViewDetails = () => {
     if (selectedNode && onNavigate) {
-      // Close the modal first
       setSelectedNode(null);
-      // Navigate to the assets tab with the selected asset
       onNavigate('assets', selectedNode.id);
     }
   };
 
 const renderOverview = () => {
-    // FIX: The `groupedAssets` logic now correctly uses asset.asset_type for grouping
     const groupedAssets = data.assets.reduce((groups, asset) => {
-      const type = asset.type || 'general'; // Fallback to 'general' if type is null
+      const type = asset.type || 'general';
       if (!groups[type]) {
         groups[type] = [];
       }
@@ -282,7 +289,6 @@ const renderOverview = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {Object.entries(groupedAssets).map(([type, assets]) => {
             const Icon = getAssetIcon(type);
-            // FIX: Add a check to ensure type is a string before calling .replace()
             const typeLabel = type ? type.replace('_', ' ').toUpperCase() : 'General';
             
             return (
@@ -322,7 +328,7 @@ const renderOverview = () => {
                           </Badge>
                         </div>
                         
-                        {asset.metrics && ( // Changed to 'metrics'
+                        {asset.metrics && Object.keys(asset.metrics).length > 0 && ( 
                           <div className="mt-2 pt-2 border-t border-current/20">
                             <div className="grid grid-cols-2 gap-1 text-xs">
                               {Object.entries(asset.metrics).slice(0, 2).map(([key, value]) => (
@@ -465,7 +471,8 @@ const renderOverview = () => {
                   const StatusIcon = getStatusIcon(node.status);
                   const isHovered = hoveredNode === node.id;
                   const isSelected = selectedNode?.id === node.id;
-                  const isCollapsed = node.type === 'category' && collapsedCategories.has(node.id);
+                  // isCollapsed depends on collapsedCategories state
+                  const isCollapsed = node.type === 'category' && collapsedCategories.has(node.id); 
 
                   return (
                     <div
