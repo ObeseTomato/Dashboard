@@ -391,7 +391,11 @@ export const VisualEcosystem = ({ data, onAssetClick, onNavigate }: VisualEcosys
                               {Object.entries(asset.key_metrics_json).map(([key, value]) => (
                                 <div key={key} className="flex justify-between">
                                   <span className="opacity-75">{key}:</span>
-                                  <span className="font-medium">{typeof value === 'number' ? value.toLocaleString() : value}</span>
+                                  <span className="font-medium">
+                                    {typeof value === 'number' ? value.toLocaleString() : 
+                                     typeof value === 'object' ? 'Complex Data' : 
+                                     String(value)}
+                                  </span>
                                 </div>
                               ))}
                             </div>

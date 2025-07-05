@@ -439,7 +439,11 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
                             {Object.entries(asset.key_metrics_json).slice(0, 2).map(([key, value]: [string, any]) => (
                               <div key={key} className="flex items-center space-x-2 text-xs">
                                 <span className="text-muted-foreground">{key}:</span>
-                                <span className="font-medium">{typeof value === 'number' ? value.toLocaleString() : value}</span>
+                                <span className="font-medium">
+                                  {typeof value === 'number' ? value.toLocaleString() : 
+                                   typeof value === 'object' ? 'Complex Data' : 
+                                   String(value)}
+                                </span>
                                 <TrendingUp className="h-3 w-3 text-success" />
                               </div>
                             ))}
