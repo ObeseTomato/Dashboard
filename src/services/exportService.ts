@@ -1,8 +1,11 @@
+// obesetomato/dashboard/Dashboard-c1fdb5a0f45fa9f7c956a11b09f4801f23b45082/src/services/exportService.ts
 
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import Papa from 'papaparse';
 import { DashboardData, DigitalAsset, Task } from '../types/dashboard';
+import { geminiService } from './geminiService'; // Import geminiService
+import { AiContext } from './geminiService'; // Import AiContext type
 
 export interface ExportOptions {
   filename?: string;
@@ -56,36 +59,85 @@ class ExportService {
   }
 
   // Export dashboard summary to PDF
-  exportDashboardToPDF(data: DashboardData, options: ExportOptions = {}) {
+  async exportDashboardToPDF(data: DashboardData, options: ExportOptions = {}) { // Made async
     const { filename = 'dashboard-report' } = options;
     
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.width;
-    
-    // Header
-    doc.setFontSize(20);
-    doc.text('Dashboard Report', pageWidth / 2, 20, { align: 'center' });
-    
-    doc.setFontSize(12);
-    doc.text(`Generated on: ${new Date().toLocaleDateString()}`, pageWidth / 2, 30, { align: 'center' });
-    doc.text(`Last Updated: ${data.lastUpdated}`, pageWidth / 2, 40, { align: 'center' });
-    
-    // Clinic Info
-    doc.setFontSize(16);
-    doc.text('Clinic Information', 20, 60);
-    doc.setFontSize(12);
-    doc.text(`Name: ${data.clinic.name}`, 20, 75);
-    doc.text(`Location: ${data.clinic.location}`, 20, 85);
-    doc.text(`Specialties: ${data.clinic.specialties.join(', ')}`, 20, 95);
-    doc.text(`Data Quality: ${data.dataQuality}%`, 20, 105);
+    let yPos = 20; // Y position for content
 
-    // Assets Summary
+    // Set font for titles
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(20);
+    doc.text('Digital Ecosystem Dashboard Report', pageWidth / 2, yPos, { align: 'center' });
+    yPos += 10;
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.text(`Generated on: ${new Date().toLocaleString()}`, pageWidth / 2, yPos, { align: 'center' });
+    yPos += 10;
+    doc.text(`Last Data Updated: ${data.lastUpdated}`, pageWidth / 2, yPos, { align: 'center' });
+    yPos += 20; // Space after header
+
+    // Clinic Information
+    doc.setFont("helvetica", "bold");
     doc.setFontSize(16);
-    doc.text('Assets Summary', 20, 125);
-    
+    doc.text('Clinic Information', 20, yPos);
+    yPos += 10;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(12);
+    doc.text(`Name: ${data.clinic.name}`, 20, yPos);
+    yPos += 7;
+    doc.text(`Location: ${data.clinic.location}`, 20, yPos);
+    yPos += 7;
+    doc.text(`Specialties: ${data.clinic.specialties.join(', ')}`, 20, yPos);
+    yPos += 7;
+    doc.text(`Overall Data Quality: ${data.dataQuality}%`, 20, yPos);
+    yPos += 15; // Space after clinic info
+
+    // AI-Generated Strategic Briefing
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(16);
+    doc.text('AI-Generated Strategic Briefing', 20, yPos);
+    yPos += 10;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+
+    // Prepare context for AI briefing (using actual data from dashboardData)
+    const aiContext: AiContext = {
+      clinicName: data.clinic.name,
+      assets: data.assets,
+      tasks: data.tasks,
+      analytics: data.analytics,
+      competitors: data.competitors
+    };
+
+    // Call AI service to generate briefing
+    const briefingText = await geminiService.generateStrategicBriefing(aiContext);
+
+    // Split text into lines to fit page width
+    const splitText = doc.splitTextToSize(briefingText, pageWidth - 40); // 20 units margin on each side
+    doc.text(splitText, 20, yPos);
+    yPos += splitText.length * 5; // Adjust yPos based on number of lines
+    yPos += 15; // Space after briefing
+
+    // Ensure enough space for next section or add new page
+    if (yPos + 50 > doc.internal.pageSize.height) { // If less than 50 units remaining
+        doc.addPage();
+        yPos = 20;
+    }
+
+
+    // Assets Summary Table
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(16);
+    doc.text('Assets Summary', 20, yPos);
+    yPos += 10;
+    doc.setFont("helvetica", "normal");
+
     const assetStats = this.calculateAssetStats(data.assets);
     autoTable(doc, {
-      startY: 135,
+      startY: yPos,
       head: [['Status', 'Count', 'Percentage']],
       body: [
         ['Active', assetStats.active.toString(), `${assetStats.activePercent}%`],
@@ -93,25 +145,41 @@ class ExportService {
         ['Critical', assetStats.critical.toString(), `${assetStats.criticalPercent}%`],
         ['Inactive', assetStats.inactive.toString(), `${assetStats.inactivePercent}%`]
       ],
-      theme: 'grid'
+      theme: 'grid',
+      styles: { fontSize: 10 },
+      headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0] }, // Light grey header
+      alternateRowStyles: { fillColor: [250, 250, 250] } // Lighter alternating rows
     });
+    yPos = (doc as any).lastAutoTable.finalY + 15; // Update yPos after table
 
-    // Tasks Summary
-    const finalY = (doc as any).lastAutoTable.finalY + 20;
+    // Ensure enough space for next section or add new page
+    if (yPos + 50 > doc.internal.pageSize.height) { 
+        doc.addPage();
+        yPos = 20;
+    }
+
+    // Tasks Summary Table
+    doc.setFont("helvetica", "bold");
     doc.setFontSize(16);
-    doc.text('Tasks Summary', 20, finalY);
+    doc.text('Tasks Summary', 20, yPos);
+    yPos += 10;
+    doc.setFont("helvetica", "normal");
     
     const taskStats = this.calculateTaskStats(data.tasks);
     autoTable(doc, {
-      startY: finalY + 10,
+      startY: yPos,
       head: [['Priority', 'Total', 'Completed', 'Pending']],
       body: [
         ['High', taskStats.high.total.toString(), taskStats.high.completed.toString(), taskStats.high.pending.toString()],
         ['Medium', taskStats.medium.total.toString(), taskStats.medium.completed.toString(), taskStats.medium.pending.toString()],
         ['Low', taskStats.low.total.toString(), taskStats.low.completed.toString(), taskStats.low.pending.toString()]
       ],
-      theme: 'grid'
+      theme: 'grid',
+      styles: { fontSize: 10 },
+      headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0] },
+      alternateRowStyles: { fillColor: [250, 250, 250] }
     });
+    yPos = (doc as any).lastAutoTable.finalY + 15; // Update yPos after table
 
     doc.save(`${filename}.pdf`);
   }
@@ -144,6 +212,8 @@ class ExportService {
       body: tableData,
       theme: 'grid',
       styles: { fontSize: 10 },
+      headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0] },
+      alternateRowStyles: { fillColor: [250, 250, 250] },
       columnStyles: {
         0: { cellWidth: 40 },
         1: { cellWidth: 30 },
@@ -158,7 +228,7 @@ class ExportService {
 
   // Export tasks to PDF
   exportTasksToPDF(tasks: Task[], options: ExportOptions = {}) {
-    const { filename = 'tasks-report' } = options;
+    const { filename = 'tasks-report' = options;
     
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.width;
@@ -184,6 +254,8 @@ class ExportService {
       body: tableData,
       theme: 'grid',
       styles: { fontSize: 10 },
+      headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0] },
+      alternateRowStyles: { fillColor: [250, 250, 250] },
       columnStyles: {
         0: { cellWidth: 50 },
         1: { cellWidth: 30 },
