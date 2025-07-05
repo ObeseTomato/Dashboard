@@ -30,8 +30,11 @@ import {
   Trash2,
   AlertTriangle, 
   CheckCircle,
-  Pencil 
-} from 'lucide-react';
+  Pencil,
+  Phone, // Added for GBP details
+  MapPin, // Added for GBP details
+  Clock // Added for GBP details
+} from 'lucide-react'; // Updated Lucide imports
 import { useDigitalAssets, useCreateDigitalAsset, useUpdateDigitalAsset } from '../hooks/useSupabaseAPI';
 import { useToast } from '../hooks/use-toast';
 import { DigitalAsset } from '../types/dashboard'; 
@@ -480,7 +483,7 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
 
       {/* Asset Detail Dialog (Now with expanded content for Business Profiles) */}
       <Dialog open={!!selectedAsset} onOpenChange={() => setSelectedAsset(null)}>
-        <DialogContent className="max-w-3xl"> {/* Increased max-w for more content */}
+        <DialogContent className="max-w-3xl overflow-y-auto max-h-[90vh]"> {/* Added overflow-y-auto and max-h */}
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               {selectedAsset && (
@@ -493,7 +496,7 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
           </DialogHeader>
           
           {selectedAsset && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4"> {/* Use grid for main layout */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4"> 
               {/* Column 1 */}
               <div className="space-y-6">
                 {/* Status and Priority */}
@@ -534,7 +537,7 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
                   </div>
                 )}
 
-                {/* General Info */}
+                {/* General Info (from DigitalAsset schema) */}
                 <div>
                   <h4 className="font-semibold mb-2">General Information</h4>
                   <div className="grid grid-cols-2 gap-2 text-sm text-muted-foreground">
@@ -554,6 +557,9 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
                     <div>
                       <h4 className="font-semibold mb-2">Business Information</h4>
                       <div className="text-sm text-muted-foreground space-y-1">
+                        {selectedAsset.key_metrics_json.businessInformation.businessName && (
+                           <p><strong>Name:</strong> {selectedAsset.key_metrics_json.businessInformation.businessName}</p>
+                        )}
                         {selectedAsset.key_metrics_json.businessInformation.primaryCategory && (
                           <p><strong>Primary Category:</strong> {selectedAsset.key_metrics_json.businessInformation.primaryCategory}</p>
                         )}
@@ -577,6 +583,9 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
                         )}
                         {selectedAsset.key_metrics_json.contactSocials.website && (
                           <p><strong>Website:</strong> <a href={selectedAsset.key_metrics_json.contactSocials.website} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">{selectedAsset.key_metrics_json.contactSocials.website}</a></p>
+                        )}
+                        {selectedAsset.key_metrics_json.contactSocials.chat && (
+                          <p><strong>Chat:</strong> {selectedAsset.key_metrics_json.contactSocials.chat}</p>
                         )}
                         {selectedAsset.key_metrics_json.contactSocials.facebook && (
                           <p><strong>Facebook:</strong> <a href={selectedAsset.key_metrics_json.contactSocials.facebook} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">{selectedAsset.key_metrics_json.contactSocials.facebook}</a></p>
@@ -606,9 +615,12 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
                       <h4 className="font-semibold mb-2">Business Hours</h4>
                       <div className="text-sm text-muted-foreground space-y-1">
                         {Object.entries(selectedAsset.key_metrics_json.businessHours).map(([day, hours]) => (
-                          <p key={day}><strong>{day}:</strong> {hours}</p>
+                          <p key={day}><strong>{day.charAt(0).toUpperCase() + day.slice(1)}:</strong> {hours}</p>
                         ))}
                       </div>
+                      {selectedAsset.key_metrics_json.specialHours && (
+                         <p className="mt-2"><strong>Special Hours:</strong> {selectedAsset.key_metrics_json.specialHours}</p>
+                      )}
                     </div>
                   )}
 
