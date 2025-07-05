@@ -228,7 +228,7 @@ class ExportService {
 
   // Export tasks to PDF
   exportTasksToPDF(tasks: Task[], options: ExportOptions = {}) {
-    const { filename = 'tasks-report' = options;
+    const { filename = 'tasks-report' } = options;
     
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.width;
