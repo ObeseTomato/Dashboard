@@ -7,42 +7,41 @@ const supabase = createClient(
 );
 
 export default async (req, res) => {
-  // Handle creating a new task
   if (req.method === 'POST') {
     try {
+      // 1. Get the Authorization header from the incoming request
       const token = req.headers.authorization?.split(' ')[1];
-      const { data: { user } } = await supabase.auth.getUser(token);
 
-      if (!user) {
-        return res.status(401).json({ error: 'Unauthorized' });
+      // 2. Use the token to get the user's identity from Supabase
+      const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+
+      // 3. If no user is found, return an unauthorized error.
+      if (userError || !user) {
+        return res.status(401).json({ error: 'Unauthorized: Invalid token.' });
       }
 
+      // 4. Create the new task object, merging the user's ID
       const newTaskData = {
-        ...req.body,
-        user_id: user.id // This satisfies the RLS policy
+        ...req.body, // The data sent from the frontend
+        user_id: user.id // This is the crucial line that satisfies the RLS policy
       };
 
-      const { data, error } = await supabase.from('tasks').insert(newTaskData).select().single();
+      // 5. Insert the new object into the database
+      const { data: createdTask, error: insertError } = await supabase
+        .from('tasks')
+        .insert(newTaskData)
+        .select()
+        .single();
 
-      if (error) throw error;
-      return res.status(201).json({ data });
+      if (insertError) throw insertError;
+      return res.status(201).json(createdTask);
 
     } catch (error) {
       return res.status(500).json({ error: error.message });
     }
   }
 
-  // Handle fetching all tasks
-  if (req.method === 'GET') {
-    try {
-        const { data, error } = await supabase.from('tasks').select('*').order('created_at', { ascending: false });
-        if (error) throw error;
-        return res.status(200).json({ data });
-    } catch (error) {
-        return res.status(500).json({ error: error.message });
-    }
-  }
-
-  res.setHeader('Allow', ['GET', 'POST']);
+  // Handle GET requests or other methods
+  res.setHeader('Allow', ['POST']);
   res.status(405).end(`Method ${req.method} Not Allowed`);
 };
