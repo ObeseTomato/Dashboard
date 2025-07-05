@@ -31,10 +31,10 @@ import {
   AlertTriangle, 
   CheckCircle,
   Pencil,
-  Phone, // Added for GBP details
-  MapPin, // Added for GBP details
-  Clock // Added for GBP details
-} from 'lucide-react'; // Updated Lucide imports
+  Phone, 
+  MapPin, 
+  Clock 
+} from 'lucide-react'; 
 import { useDigitalAssets, useCreateDigitalAsset, useUpdateDigitalAsset } from '../hooks/useSupabaseAPI';
 import { useToast } from '../hooks/use-toast';
 import { DigitalAsset } from '../types/dashboard'; 
@@ -483,7 +483,7 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
 
       {/* Asset Detail Dialog (Now with expanded content for Business Profiles) */}
       <Dialog open={!!selectedAsset} onOpenChange={() => setSelectedAsset(null)}>
-        <DialogContent className="max-w-3xl overflow-y-auto max-h-[90vh]"> {/* Added overflow-y-auto and max-h */}
+        <DialogContent className="max-w-3xl overflow-y-auto max-h-[90vh]"> 
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               {selectedAsset && (
@@ -496,66 +496,64 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
           </DialogHeader>
           
           {selectedAsset && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4"> 
-              {/* Column 1 */}
-              <div className="space-y-6">
-                {/* Status and Priority */}
-                <div className="flex items-center gap-4">
-                  <Badge className={getStatusBadge(selectedAsset.status || '')}> 
-                    {selectedAsset.status}
-                  </Badge>
-                  <Badge variant={selectedAsset.priority === 'high' ? 'destructive' : 
-                                 selectedAsset.priority === 'medium' ? 'default' : 'secondary'}>
-                    {selectedAsset.priority} priority
-                  </Badge>
-                </div>
+            <div className="space-y-6 py-4"> 
+              {/* Status and Priority */}
+              <div className="flex items-center gap-4">
+                <Badge className={getStatusBadge(selectedAsset.status || '')}> 
+                  {selectedAsset.status}
+                </Badge>
+                <Badge variant={selectedAsset.priority === 'high' ? 'destructive' : 
+                               selectedAsset.priority === 'medium' ? 'default' : 'secondary'}>
+                  {selectedAsset.priority} priority
+                </Badge>
+              </div>
 
-                {/* URL */}
-                {selectedAsset.url && (
-                  <div>
-                    <h4 className="font-semibold mb-2">URL</h4>
-                    <a href={selectedAsset.url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline break-all">
-                      {selectedAsset.url}
-                    </a>
-                  </div>
-                )}
-
-                {/* Performance Metrics (Generic from key_metrics_json) */}
-                {selectedAsset.key_metrics_json && Object.keys(selectedAsset.key_metrics_json).length > 0 && (
-                  <div>
-                    <h4 className="font-semibold mb-3">Performance Metrics</h4>
-                    <div className="grid grid-cols-2 gap-4">
-                      {Object.entries(selectedAsset.key_metrics_json).map(([key, value]) => (
-                        <div key={key} className="bg-muted/50 p-3 rounded-lg">
-                          <div className="text-sm text-muted-foreground">{key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</div> 
-                          <div className="text-lg font-semibold">
-                            {typeof value === 'number' ? value.toLocaleString() : value}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* General Info (from DigitalAsset schema) */}
+              {/* URL */}
+              {selectedAsset.url && (
                 <div>
-                  <h4 className="font-semibold mb-2">General Information</h4>
-                  <div className="grid grid-cols-2 gap-2 text-sm text-muted-foreground">
-                    <div><strong>Type:</strong> {selectedAsset.asset_type ? selectedAsset.asset_type.replace(/_/g, ' ').toUpperCase() : 'N/A'}</div>
-                    <div><strong>Platform ID:</strong> {selectedAsset.platform_id_external || 'N/A'}</div>
-                    <div><strong>Created:</strong> {selectedAsset.created_at ? new Date(selectedAsset.created_at).toLocaleDateString() : 'N/A'}</div>
-                    <div><strong>Last Updated:</strong> {selectedAsset.updated_at ? new Date(selectedAsset.updated_at).toLocaleDateString() : (selectedAsset.created_at ? new Date(selectedAsset.created_at).toLocaleDateString() : 'N/A')}</div>
+                  <h4 className="font-semibold mb-2">URL</h4>
+                  <a href={selectedAsset.url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline break-all">
+                    {selectedAsset.url}
+                  </a>
+                </div>
+              )}
+
+              {/* Performance Metrics (Generic from key_metrics_json) */}
+              {selectedAsset.key_metrics_json && Object.keys(selectedAsset.key_metrics_json).length > 0 && (
+                <div>
+                  <h4 className="font-semibold mb-3">Performance Metrics</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    {Object.entries(selectedAsset.key_metrics_json).map(([key, value]) => (
+                      <div key={key} className="bg-muted/50 p-3 rounded-lg">
+                        <div className="text-sm text-muted-foreground">{key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</div> 
+                        <div className="text-lg font-semibold">
+                          {typeof value === 'number' ? value.toLocaleString() : value}
+                        </div>
+                      </div>
+                    ))}
                   </div>
+                </div>
+              )}
+
+              {/* General Info (from DigitalAsset schema) */}
+              <div>
+                <h4 className="font-semibold mb-2">General Information</h4>
+                <div className="grid grid-cols-2 gap-2 text-sm text-muted-foreground">
+                  <div><strong>Type:</strong> {selectedAsset.asset_type ? selectedAsset.asset_type.replace(/_/g, ' ').toUpperCase() : 'N/A'}</div>
+                  <div><strong>Platform ID:</strong> {selectedAsset.platform_id_external || 'N/A'}</div>
+                  <div><strong>Created:</strong> {selectedAsset.created_at ? new Date(selectedAsset.created_at).toLocaleDateString() : 'N/A'}</div>
+                  <div><strong>Last Updated:</strong> {selectedAsset.updated_at ? new Date(selectedAsset.updated_at).toLocaleDateString() : (selectedAsset.created_at ? new Date(selectedAsset.created_at).toLocaleDateString() : 'N/A')}</div>
                 </div>
               </div>
 
-              {/* Column 2: Specific GBP Details (if asset_type is business_profile) */}
+              {/* Specific GBP Details (if asset_type is business_profile) */}
               {selectedAsset.asset_type === 'business_profile' && selectedAsset.key_metrics_json && (
-                <div className="space-y-6">
-                  {/* Business Information */}
+                <div className="space-y-6 pt-6 border-t border-border"> {/* Added top border for separation */}
+                  <h3 className="text-xl font-bold">Google Business Profile Details</h3> {/* Main heading for GBP section */}
+
                   {selectedAsset.key_metrics_json.businessInformation && (
                     <div>
-                      <h4 className="font-semibold mb-2">Business Information</h4>
+                      <h4 className="font-semibold mb-2 flex items-center gap-2"><Star className="h-4 w-4 text-yellow-500"/> Business Information</h4>
                       <div className="text-sm text-muted-foreground space-y-1">
                         {selectedAsset.key_metrics_json.businessInformation.businessName && (
                            <p><strong>Name:</strong> {selectedAsset.key_metrics_json.businessInformation.businessName}</p>
@@ -569,14 +567,16 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
                         {selectedAsset.key_metrics_json.description && (
                            <p><strong>Description:</strong> {selectedAsset.key_metrics_json.description}</p>
                         )}
+                         {selectedAsset.key_metrics_json.businessInformation.openingDate && (
+                           <p><strong>Opening Date:</strong> {new Date(selectedAsset.key_metrics_json.businessInformation.openingDate).toLocaleDateString()}</p>
+                        )}
                       </div>
                     </div>
                   )}
 
-                  {/* Contact & Socials */}
                   {selectedAsset.key_metrics_json.contactSocials && (
                     <div>
-                      <h4 className="font-semibold mb-2">Contact & Socials</h4>
+                      <h4 className="font-semibold mb-2 flex items-center gap-2"><Phone className="h-4 w-4 text-blue-500"/> Contact & Socials</h4>
                       <div className="text-sm text-muted-foreground space-y-1">
                         {selectedAsset.key_metrics_json.contactSocials.phoneNumber && (
                           <p><strong>Phone:</strong> {selectedAsset.key_metrics_json.contactSocials.phoneNumber}</p>
@@ -594,10 +594,9 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
                     </div>
                   )}
 
-                  {/* Location and Areas */}
                   {selectedAsset.key_metrics_json.locationAreas && (
                     <div>
-                      <h4 className="font-semibold mb-2">Location and Areas</h4>
+                      <h4 className="font-semibold mb-2 flex items-center gap-2"><MapPin className="h-4 w-4 text-red-500"/> Location and Areas</h4>
                       <div className="text-sm text-muted-foreground space-y-1">
                         {selectedAsset.key_metrics_json.locationAreas.businessLocation && (
                           <p><strong>Location:</strong> {selectedAsset.key_metrics_json.locationAreas.businessLocation}</p>
@@ -609,10 +608,9 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
                     </div>
                   )}
 
-                  {/* Business Hours */}
                   {selectedAsset.key_metrics_json.businessHours && (
                     <div>
-                      <h4 className="font-semibold mb-2">Business Hours</h4>
+                      <h4 className="font-semibold mb-2 flex items-center gap-2"><Clock className="h-4 w-4 text-gray-500"/> Business Hours</h4>
                       <div className="text-sm text-muted-foreground space-y-1">
                         {Object.entries(selectedAsset.key_metrics_json.businessHours).map(([day, hours]) => (
                           <p key={day}><strong>{day.charAt(0).toUpperCase() + day.slice(1)}:</strong> {hours}</p>
@@ -624,10 +622,9 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
                     </div>
                   )}
 
-                  {/* Attributes & Accessibility */}
                   {selectedAsset.key_metrics_json.attributesAccessibility && (
                     <div>
-                      <h4 className="font-semibold mb-2">Attributes & Accessibility</h4>
+                      <h4 className="font-semibold mb-2 flex items-center gap-2"><CheckCircle className="h-4 w-4 text-purple-500"/> Attributes & Accessibility</h4>
                       <div className="text-sm text-muted-foreground space-y-1">
                         {selectedAsset.key_metrics_json.attributesAccessibility.fromTheBusiness?.length > 0 && (
                           <p><strong>From the business:</strong> {selectedAsset.key_metrics_json.attributesAccessibility.fromTheBusiness.join(', ')}</p>
@@ -657,10 +654,9 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
                     </div>
                   )}
 
-                  {/* Services */}
                   {selectedAsset.key_metrics_json.services && (
                     <div>
-                      <h4 className="font-semibold mb-2">Services</h4>
+                      <h4 className="font-semibold mb-2 flex items-center gap-2"><Users className="h-4 w-4 text-orange-500"/> Services</h4>
                       <div className="text-sm text-muted-foreground space-y-2">
                         {selectedAsset.key_metrics_json.services.primaryCategory && (
                            <div>
@@ -686,10 +682,9 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
                     </div>
                   )}
 
-                  {/* Q&A */}
                   {selectedAsset.key_metrics_json.qa?.length > 0 && (
                     <div>
-                      <h4 className="font-semibold mb-2">Q&A</h4>
+                      <h4 className="font-semibold mb-2 flex items-center gap-2"><MessageSquare className="h-4 w-4 text-indigo-500"/> Q&A</h4>
                       <div className="text-sm text-muted-foreground space-y-2">
                         {selectedAsset.key_metrics_json.qa.map((item: any, idx: number) => (
                           <div key={idx}>
@@ -701,10 +696,9 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
                     </div>
                   )}
 
-                  {/* Posts */}
                   {selectedAsset.key_metrics_json.posts?.length > 0 && (
                     <div>
-                      <h4 className="font-semibold mb-2">Posts</h4>
+                      <h4 className="font-semibold mb-2 flex items-center gap-2"><FileText className="h-4 w-4 text-green-500"/> Posts</h4>
                       <div className="text-sm text-muted-foreground space-y-3">
                         {selectedAsset.key_metrics_json.posts.map((post: any, idx: number) => (
                           <div key={idx} className="border-b border-border pb-2 last:border-b-0">
