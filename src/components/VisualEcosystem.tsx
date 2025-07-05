@@ -240,12 +240,14 @@ const createEcosystemNodes = (): EcosystemNode[] => {
     }
   };
 
-  const renderOverview = () => {
+const renderOverview = () => {
+    // FIX: The `groupedAssets` logic now correctly uses asset.asset_type for grouping
     const groupedAssets = data.assets.reduce((groups, asset) => {
-      if (!groups[asset.type]) {
-        groups[asset.type] = [];
+      const type = asset.asset_type || 'general'; // Fallback to 'general' if type is null
+      if (!groups[type]) {
+        groups[type] = [];
       }
-      groups[asset.type].push(asset);
+      groups[type].push(asset);
       return groups;
     }, {} as Record<string, typeof data.assets>);
 
@@ -279,7 +281,8 @@ const createEcosystemNodes = (): EcosystemNode[] => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {Object.entries(groupedAssets).map(([type, assets]) => {
             const Icon = getAssetIcon(type);
-            const typeLabel = type.replace('_', ' ').toUpperCase();
+            // FIX: Add a check to ensure type is a string before calling .replace()
+            const typeLabel = type ? type.replace('_', ' ').toUpperCase() : 'General';
             
             return (
               <Card key={type} className="hover:shadow-lg transition-all duration-300">
@@ -311,7 +314,7 @@ const createEcosystemNodes = (): EcosystemNode[] => {
                           </span>
                           <Badge 
                             variant={asset.priority === 'high' ? 'destructive' : 
-                                   asset.priority === 'medium' ? 'default' : 'secondary'}
+                                     asset.priority === 'medium' ? 'default' : 'secondary'}
                             className="text-xs"
                           >
                             {asset.priority}
