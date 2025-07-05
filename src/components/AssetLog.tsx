@@ -30,7 +30,7 @@ import {
   Trash2,
   AlertTriangle, 
   CheckCircle,
-  Pencil 
+  Pencil // Added Pencil icon for Edit button
 } from 'lucide-react';
 import { useDigitalAssets, useCreateDigitalAsset, useUpdateDigitalAsset } from '../hooks/useSupabaseAPI';
 import { useToast } from '../hooks/use-toast';
@@ -401,12 +401,13 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
                         "hover:bg-muted/50 cursor-pointer border-l-4", 
                         getPriorityBorderColor(asset.priority) 
                       )}
+                      // The row itself opens the dialog
                       onClick={() => setSelectedAsset(asset)} 
                     >
-                      <TableCell>
+                      <TableCell className="align-middle"> {/* Added align-middle */}
                         <Icon className="h-4 w-4 text-primary" />
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="align-middle"> {/* Added align-middle */}
                         <div>
                           <p className="font-medium">{asset.asset_name}</p>
                           {asset.url && (
@@ -416,19 +417,19 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
                           )}
                         </div>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="align-middle"> {/* Added align-middle */}
                         {getStatusBadge(asset.status)}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="align-middle"> {/* Added align-middle */}
                         {getPriorityBadge(asset.priority)}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="align-middle"> {/* Added align-middle */}
                         <div className="flex items-center space-x-1 text-sm text-muted-foreground">
                           <Calendar className="h-3 w-3" />
                           <span>{asset.last_updated ? new Date(asset.last_updated).toLocaleDateString() : 'N/A'}</span>
                         </div>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="align-middle"> {/* Added align-middle */}
                         {asset.key_metrics_json && Object.keys(asset.key_metrics_json).length > 0 ? (
                           <div className="space-y-1">
                             {Object.entries(asset.key_metrics_json).slice(0, 2).map(([key, value]: [string, any]) => (
@@ -443,8 +444,19 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
                           <span className="text-muted-foreground text-sm">No metrics</span>
                         )}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="align-middle"> {/* Added align-middle */}
                         <div className="flex space-x-1">
+                          {/* NEW: Explicit View Details button */}
+                           <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation(); // Prevent row click from triggering
+                                setSelectedAsset(asset); // Explicitly open dialog
+                              }}
+                            >
+                              <Eye className="h-3 w-3" /> View
+                            </Button>
                           {asset.url && (
                             <Button
                               variant="ghost"
@@ -468,7 +480,7 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
         </Card>
       ))}
 
-      {/* Asset Detail Dialog (Now used by row click) */}
+      {/* Asset Detail Dialog (Now used by row click and explicit View button) */}
       <Dialog open={!!selectedAsset} onOpenChange={() => setSelectedAsset(null)}>
         <DialogContent className="max-w-2xl"> 
           <DialogHeader>
@@ -486,7 +498,7 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
             <div className="space-y-6 py-4"> 
               {/* Status and Priority */}
               <div className="flex items-center gap-4">
-                <Badge className={getStatusColor(selectedAsset.status)}>
+                <Badge className={getStatusBadge(selectedAsset.status)}>
                   {selectedAsset.status}
                 </Badge>
                 <Badge variant={selectedAsset.priority === 'high' ? 'destructive' : 
@@ -530,7 +542,7 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
                   <div><strong>Type:</strong> {selectedAsset.asset_type.replace(/_/g, ' ').toUpperCase()}</div>
                   <div><strong>Platform ID:</strong> {selectedAsset.platform_id_external || 'N/A'}</div>
                   <div><strong>Created:</strong> {new Date(selectedAsset.created_at).toLocaleDateString()}</div>
-                  <div><strong>Last Updated:</strong> {new Date(selectedAsset.updated_at || selectedAsset.created_at).toLocaleDateString()}</div>
+                  <div><strong>Last Updated:</strong> {new Date(asset.last_updated || asset.created_at).toLocaleDateString()}</div> {/* Corrected Last Updated for dialog */}
                 </div>
               </div>
 
@@ -552,16 +564,7 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
                     Visit Asset
                   </Button>
                 )}
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setSelectedAsset(null); 
-                    onAssetClick?.(selectedAsset.id.toString()); 
-                  }}
-                >
-                  <Eye className="h-4 w-4 mr-2" /> 
-                  View Details
-                </Button>
+                {/* Removed redundant 'View Details' button here as this IS the view details */}
               </div>
             </div>
           )}
