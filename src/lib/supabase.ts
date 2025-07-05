@@ -1,3 +1,5 @@
+// obesetomato/dashboard/Dashboard-c1fdb5a0f45fa9f7c956a11b09f4801f23b45082/src/lib/supabase.ts
+
 import { createClient } from '@supabase/supabase-js'
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
@@ -98,11 +100,11 @@ export interface Database {
           last_updated?: string
         }
       }
-      digital_assets: {
+      digital_assets: { // <--- UPDATED THIS TABLE
         Row: {
           id: number
           asset_name: string
-          asset_type: string
+          asset_type: 'business_profile' | 'website' | 'social_media' | 'directory' | 'review_platform' | 'advertising' // <--- Changed 'gmb' to 'business_profile'
           url: string | null
           status: string | null
           priority: string | null
@@ -115,7 +117,7 @@ export interface Database {
         Insert: {
           id?: number
           asset_name: string
-          asset_type: string
+          asset_type: 'business_profile' | 'website' | 'social_media' | 'directory' | 'review_platform' | 'advertising' // <--- Changed 'gmb' to 'business_profile'
           url?: string | null
           status?: string | null
           priority?: string | null
@@ -128,7 +130,7 @@ export interface Database {
         Update: {
           id?: number
           asset_name?: string
-          asset_type?: string
+          asset_type?: 'business_profile' | 'website' | 'social_media' | 'directory' | 'review_platform' | 'advertising' // <--- Changed 'gmb' to 'business_profile'
           url?: string | null
           status?: string | null
           priority?: string | null
