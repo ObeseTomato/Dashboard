@@ -6,7 +6,7 @@ import { Button } from './ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 import { DashboardData } from '../types/dashboard'; 
-import { useDigitalAssets } from '../hooks/useSupabaseAPI'; // Import useDigitalAssets
+import { useDigitalAssets } from '../hooks/useSupabaseAPI'; 
 import { 
   Globe, 
   Star, 
@@ -20,12 +20,13 @@ import {
   ChevronRight,
   Monitor, 
   FileText,
-  Loader2 // Added Loader2 for loading state
+  Loader2,
+  Eye // ADDED: Eye icon import
 } from 'lucide-react'; 
-import { cn } from '@/lib/utils'; // Import cn
+import { cn } from '@/lib/utils'; 
 
 interface VisualEcosystemProps {
-  data: DashboardData; // Still passed for clinic info (static for now)
+  data: DashboardData; 
   onAssetClick: (assetId: string) => void;
   onNavigate?: (tab: string, itemId?: string) => void;
 }
@@ -49,7 +50,6 @@ export const VisualEcosystem = ({ data, onAssetClick, onNavigate }: VisualEcosys
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
   const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(() => new Set()); 
 
-  // NEW: Fetch live digital assets data
   const { data: digitalAssetsData, isLoading, error } = useDigitalAssets();
 
   const getAssetIcon = (type: string) => {
@@ -76,13 +76,12 @@ export const VisualEcosystem = ({ data, onAssetClick, onNavigate }: VisualEcosys
     }
   };
 
-  // NEW: Function to get priority-based styling
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'high': return 'border-l-destructive'; // Red border for high priority
-      case 'medium': return 'border-l-warning'; // Yellow border for medium priority
-      case 'low': return 'border-l-primary'; // Green border for low priority
-      default: return 'border-l-muted'; // Grey border for unknown/default
+      case 'high': return 'border-l-destructive'; 
+      case 'medium': return 'border-l-warning'; 
+      case 'low': return 'border-l-primary'; 
+      default: return 'border-l-muted'; 
     }
   };
 
@@ -108,7 +107,6 @@ export const VisualEcosystem = ({ data, onAssetClick, onNavigate }: VisualEcosys
     });
   };
 
-  // Memoize ecosystemNodes creation to prevent unnecessary re-runs
   const ecosystemNodes = useMemo(() => {
     const assetsToRender = digitalAssetsData || []; 
     
@@ -174,7 +172,6 @@ export const VisualEcosystem = ({ data, onAssetClick, onNavigate }: VisualEcosys
     ];
 
     categories.forEach((category, categoryIndex) => {
-      // Only create category node if it has assets, ensuring no empty categories appear
       if (category.assets.length > 0) { 
         const categoryId = `category-${categoryIndex}`;
         const categoryX = centerX + Math.cos(category.angle) * categoryRadius;
@@ -192,10 +189,8 @@ export const VisualEcosystem = ({ data, onAssetClick, onNavigate }: VisualEcosys
           description: `Category containing ${category.assets.length} assets`
         });
 
-        // Assets are only added if the category is NOT collapsed and has assets
         if (!collapsedCategories.has(categoryId) && category.assets.length > 0) {
           const assetsCount = category.assets.length;
-          // Spread assets more evenly in a semicircle around the category node
           const angleRange = Math.PI; 
           const angleStep = assetsCount > 1 ? angleRange / (assetsCount - 1) : 0;
           const startAngle = category.angle - angleRange / 2; 
@@ -236,23 +231,20 @@ export const VisualEcosystem = ({ data, onAssetClick, onNavigate }: VisualEcosys
       return;
     }
     
-    // For asset nodes, set selectedNode to open the modal
     const asset = digitalAssetsData?.find(a => a.id.toString() === node.id); 
     if (asset) {
-      // Cast the fetched asset data to EcosystemNode structure for the modal
       setSelectedNode({
         id: asset.id.toString(),
         name: asset.asset_name,
         type: asset.asset_type,
-        category: node.category, // Keep the category from the map node
+        category: node.category, 
         status: asset.status,
         priority: asset.priority,
-        x: node.x, y: node.y, // Keep map coordinates
-        metrics: asset.key_metrics_json, // Ensure metrics are passed
+        x: node.x, y: node.y, 
+        metrics: asset.key_metrics_json, 
         url: asset.url || '',
         description: `${asset.asset_type ? asset.asset_type.replace('_', ' ') : 'Asset'} with ${asset.status} status`
       });
-      // Also call the prop function if needed for parent component logic
       onAssetClick(node.id);
     }
   };
@@ -264,7 +256,6 @@ export const VisualEcosystem = ({ data, onAssetClick, onNavigate }: VisualEcosys
     }
   };
 
-  // NEW: Loading and Error States for Visual Ecosystem
   if (isLoading) {
     return (
       <div className="p-6 space-y-6">
@@ -296,7 +287,7 @@ export const VisualEcosystem = ({ data, onAssetClick, onNavigate }: VisualEcosys
     );
   }
 
-  const assetsForOverview = digitalAssetsData || []; // Use live data for overview
+  const assetsForOverview = digitalAssetsData || []; 
   const groupedAssets = assetsForOverview.reduce((groups, asset) => {
     const type = asset.asset_type || 'general'; 
     if (!groups[type]) {
@@ -355,23 +346,21 @@ export const VisualEcosystem = ({ data, onAssetClick, onNavigate }: VisualEcosys
                     return (
                       <div 
                         key={asset.id}
-                        // NEW: Make asset card clickable and apply priority color
                         className={cn(
-                          "p-3 pr-4 rounded-lg border-l-4 cursor-pointer transition-all duration-200 hover:scale-105", // Added border-l-4 for priority color
-                          getStatusColor(asset.status), // Status background/text/border
-                          getPriorityColor(asset.priority) // Priority left border color
+                          "p-3 pr-4 rounded-lg border-l-4 cursor-pointer transition-all duration-200 hover:scale-105", 
+                          getStatusColor(asset.status), 
+                          getPriorityColor(asset.priority) 
                         )}
                         onClick={() => {
-                          // When clicked, set selectedNode to open the modal (similar to map node click)
                           setSelectedNode({
                             id: asset.id.toString(),
                             name: asset.asset_name,
                             type: asset.asset_type,
-                            category: typeLabel, // Use the displayed category name
+                            category: typeLabel, 
                             status: asset.status,
                             priority: asset.priority,
-                            x: 0, y: 0, // Placeholder coords, not relevant for overview modal
-                            metrics: asset.key_metrics_json,
+                            x: 0, y: 0, 
+                            metrics: asset.key_metrics_json, 
                             url: asset.url || '',
                             description: `${asset.asset_type ? asset.asset_type.replace('_', ' ') : 'Asset'} with ${asset.status} status`
                           });
@@ -399,7 +388,7 @@ export const VisualEcosystem = ({ data, onAssetClick, onNavigate }: VisualEcosys
                         {asset.key_metrics_json && Object.keys(asset.key_metrics_json).length > 0 ? (
                           <div className="mt-2 pt-2 border-t border-current/20">
                             <div className="grid grid-cols-2 gap-1 text-xs">
-                              {Object.entries(asset.key_metrics_json).slice(0, 2).map(([key, value]) => (
+                              {Object.entries(asset.key_metrics_json).map(([key, value]) => (
                                 <div key={key} className="flex justify-between">
                                   <span className="opacity-75">{key}:</span>
                                   <span className="font-medium">{typeof value === 'number' ? value.toLocaleString() : value}</span>
@@ -417,7 +406,7 @@ export const VisualEcosystem = ({ data, onAssetClick, onNavigate }: VisualEcosys
                             size="sm"
                             className="w-full mt-2 h-6 text-xs"
                             onClick={(e) => {
-                              e.stopPropagation(); // Prevent card click when clicking Visit
+                              e.stopPropagation(); 
                               window.open(asset.url, '_blank');
                             }}
                           >
@@ -541,7 +530,6 @@ export const VisualEcosystem = ({ data, onAssetClick, onNavigate }: VisualEcosys
                   const StatusIcon = getStatusIcon(node.status);
                   const isHovered = hoveredNode === node.id;
                   const isSelected = selectedNode?.id === node.id;
-                  // isCollapsed depends on collapsedCategories state
                   const isCollapsed = node.type === 'category' && collapsedCategories.has(node.id); 
 
                   return (
