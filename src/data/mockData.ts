@@ -1,3 +1,5 @@
+// obesetomato/dashboard/Dashboard-c1fdb5a0f45fa9f7c956a11b09f4801f23b45082/src/data/mockData.ts
+
 import { DashboardData } from '../types/dashboard';
 
 export const mockDashboardData: DashboardData = {
@@ -13,7 +15,7 @@ export const mockDashboardData: DashboardData = {
     {
       id: 'gmb-main',
       name: 'Google Business Profile',
-      type: 'gmb',
+      type: 'business_profile', // <--- Changed 'gmb' to 'business_profile'
       status: 'active',
       priority: 'high',
       lastUpdated: '2 hours ago',
