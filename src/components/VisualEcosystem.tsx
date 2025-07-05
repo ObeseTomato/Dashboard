@@ -1,38 +1,30 @@
 // obesetomato/dashboard/Dashboard-c1fdb5a0f45fa9f7c956a11b09f4801f23b45082/src/components/VisualEcosystem.tsx
-
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
-import { DashboardData } from '../types/dashboard';
+import { DashboardData } from '../types/dashboard'; 
+import { useDigitalAssets } from '../hooks/useSupabaseAPI'; // Import useDigitalAssets
 import { 
   Globe, 
   Star, 
   Users, 
-  Instagram, 
-  Facebook, 
   Megaphone,
   ExternalLink,
   AlertTriangle,
   CheckCircle,
   Clock,
-  Phone,
-  Eye,
-  MousePointer,
-  MapPin,
-  Calendar,
-  TrendingUp,
-  MessageSquare,
-  Mail,
-  Search,
   ChevronDown,
-  ChevronRight
-} from 'lucide-react';
+  ChevronRight,
+  Monitor, // Added Monitor icon for Website Platforms
+  FileText // Used for Content & Tools
+} from 'lucide-react'; 
+import { cn } from '@/lib/utils'; // Import cn
 
 interface VisualEcosystemProps {
-  data: DashboardData;
+  data: DashboardData; // Still passed for clinic info (static for now, will be dynamic from Supabase 'clinic_info' table later)
   onAssetClick: (assetId: string) => void;
   onNavigate?: (tab: string, itemId?: string) => void;
 }
@@ -54,18 +46,22 @@ interface EcosystemNode {
 export const VisualEcosystem = ({ data, onAssetClick, onNavigate }: VisualEcosystemProps) => {
   const [selectedNode, setSelectedNode] = useState<EcosystemNode | null>(null);
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
-  const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(() => new Set()); // Initialize with a new Set directly
+  const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(() => new Set()); 
 
-  // Console log the state every render
-  console.log("Current collapsedCategories state:", Array.from(collapsedCategories));
+  // NEW: Fetch live digital assets data
+  const { data: digitalAssetsData, isLoading, error } = useDigitalAssets();
 
   const getAssetIcon = (type: string) => {
     switch (type) {
       case 'website': return Globe;
       case 'business_profile': return Star; 
       case 'social_media': return Users;
-      case 'directory': return Globe;
+      case 'directory': return Globe; // Directories often use a generic web icon
+      case 'review_platform': return FileText; // Using FileText for review platforms, adjust as needed
       case 'advertising': return Megaphone;
+      // Future types for 'Content & Tools' category
+      case 'content_platform': return FileText; 
+      case 'analytics_tool': return Monitor; 
       default: return Globe;
     }
   };
@@ -91,25 +87,21 @@ export const VisualEcosystem = ({ data, onAssetClick, onNavigate }: VisualEcosys
   };
 
   const toggleCategory = (categoryId: string) => {
-    console.log("toggleCategory called for:", categoryId);
     setCollapsedCategories(prevCollapsed => {
-      const newCollapsed = new Set(prevCollapsed); // Always create a new Set for immutability
+      const newCollapsed = new Set(prevCollapsed);
       if (newCollapsed.has(categoryId)) {
-        console.log("Collapsing category:", categoryId);
         newCollapsed.delete(categoryId);
       } else {
-        console.log("Expanding category:", categoryId);
         newCollapsed.add(categoryId);
       }
-      console.log("New collapsedCategories state after toggle:", Array.from(newCollapsed));
       return newCollapsed;
     });
   };
 
-const createEcosystemNodes = (): EcosystemNode[] => {
-    // Console log data.assets before processing
-    console.log("Data assets for node creation:", data.assets);
-
+  // Memoize ecosystemNodes creation to prevent unnecessary re-runs
+  const ecosystemNodes = useMemo(() => {
+    const assetsToRender = digitalAssetsData || []; // Use live data
+    
     const containerWidth = 1000;
     const containerHeight = 800;
     const centerX = containerWidth / 2;
@@ -135,97 +127,98 @@ const createEcosystemNodes = (): EcosystemNode[] => {
     const categories = [
       {
         name: 'Business Profiles',
-        assets: data.assets.filter(a => a.type === 'business_profile'),
+        assets: assetsToRender.filter(a => a.asset_type === 'business_profile'),
         angle: 0,
         color: '#10B981'
       },
       {
-        name: 'Website Platforms',
-        assets: data.assets.filter(a => a.type === 'website'),
-        angle: Math.PI / 3,
-        color: '#3B82F6'
+        name: 'Website Platforms', 
+        assets: assetsToRender.filter(a => a.asset_type === 'website'),
+        angle: Math.PI / 3, 
+        color: '#3B82F6' 
       },
       {
         name: 'Social Media',
-        assets: data.assets.filter(a => a.type === 'social_media'),
-        angle: 2 * Math.PI / 3,
+        assets: assetsToRender.filter(a => a.asset_type === 'social_media'),
+        angle: 2 * Math.PI / 3, 
         color: '#8B5CF6'
       },
       {
         name: 'Directories & Reviews',
-        assets: data.assets.filter(a => a.type === 'directory' || a.type === 'review_platform'),
-        angle: Math.PI,
+        assets: assetsToRender.filter(a => a.asset_type === 'directory' || a.asset_type === 'review_platform'),
+        angle: Math.PI, 
         color: '#F59E0B'
       },
       {
         name: 'Advertising',
-        assets: data.assets.filter(a => a.type === 'advertising'),
-        angle: 4 * Math.PI / 3,
+        assets: assetsToRender.filter(a => a.asset_type === 'advertising'),
+        angle: 4 * Math.PI / 3, 
         color: '#EF4444'
       },
       {
         name: 'Content & Tools', 
-        assets: data.assets.filter(a => ['content_creation', 'analysis'].includes(a.type as any)),
+        // Filter for specific asset types that might fall here, assuming future types
+        assets: assetsToRender.filter(a => a.asset_type === 'content_platform' || a.asset_type === 'analytics_tool'),
         angle: 5 * Math.PI / 3,
         color: '#6366F1'
       }
     ];
 
     categories.forEach((category, categoryIndex) => {
-      const categoryX = centerX + Math.cos(category.angle) * categoryRadius;
-      const categoryY = centerY + Math.sin(category.angle) * categoryRadius;
-      
-      const categoryId = `category-${categoryIndex}`;
-      nodes.push({
-        id: categoryId,
-        name: category.name,
-        type: 'category',
-        category: category.name,
-        status: 'active',
-        priority: 'medium',
-        x: categoryX,
-        y: categoryY,
-        description: `Category containing ${category.assets.length} assets`
-      });
-
-      // Console log if category is collapsed and how many assets
-      console.log(`Category: ${category.name}, ID: ${categoryId}, Collapsed: ${collapsedCategories.has(categoryId)}, Assets Count: ${category.assets.length}`);
-
-      if (!collapsedCategories.has(categoryId) && category.assets.length > 0) {
-        const assetsCount = category.assets.length;
-        const angleStep = assetsCount > 1 ? (Math.PI / 2) / (assetsCount - 1) : 0;
-        const startAngle = category.angle - Math.PI / 4;
+      // Only create category node if it has assets, ensuring no empty categories appear
+      // This also makes the map dynamically adapt to existing data.
+      if (category.assets.length > 0) { 
+        const categoryId = `category-${categoryIndex}`;
+        const categoryX = centerX + Math.cos(category.angle) * categoryRadius;
+        const categoryY = centerY + Math.sin(category.angle) * categoryRadius;
         
-        category.assets.forEach((asset, assetIndex) => {
-          const assetAngle = startAngle + (assetIndex * angleStep);
-          const assetX = categoryX + Math.cos(assetAngle) * assetRadius;
-          const assetY = categoryY + Math.sin(assetAngle) * assetRadius;
-          
-          nodes.push({
-            id: asset.id.toString(),
-            name: asset.name,
-            type: asset.type,
-            category: category.name,
-            status: asset.status,
-            priority: asset.priority,
-            x: assetX,
-            y: assetY,
-            metrics: asset.metrics,
-            description: `${asset.type ? asset.type.replace('_', ' ') : 'Asset'} with ${asset.status} status`
-          });
+        nodes.push({
+          id: categoryId,
+          name: category.name,
+          type: 'category',
+          category: category.name,
+          status: 'active', 
+          priority: 'medium',
+          x: categoryX,
+          y: categoryY,
+          description: `Category containing ${category.assets.length} assets`
         });
+
+        // Assets are only added if the category is NOT collapsed and has assets
+        if (!collapsedCategories.has(categoryId) && category.assets.length > 0) {
+          const assetsCount = category.assets.length;
+          // Spread assets more evenly in a semicircle around the category node
+          const angleRange = Math.PI; // 180 degrees
+          const angleStep = assetsCount > 1 ? angleRange / (assetsCount - 1) : 0;
+          const startAngle = category.angle - angleRange / 2; 
+          
+          category.assets.forEach((asset, assetIndex) => {
+            const assetAngle = startAngle + (assetIndex * angleStep);
+            const assetX = categoryX + Math.cos(assetAngle) * assetRadius;
+            const assetY = categoryY + Math.sin(assetAngle) * assetRadius;
+            
+            nodes.push({
+              id: asset.id.toString(),
+              name: asset.asset_name, 
+              type: asset.asset_type, 
+              category: category.name,
+              status: asset.status,
+              priority: asset.priority,
+              x: assetX,
+              y: assetY,
+              metrics: asset.key_metrics_json, 
+              description: `${asset.asset_type ? asset.asset_type.replace('_', ' ') : 'Asset'} with ${asset.status} status`
+            });
+          });
+        }
       }
     });
-
-    console.log("Final nodes generated:", nodes.filter(n => n.type !== 'category' && n.type !== 'hub').map(n => ({id: n.id, name: n.name, category: n.category}))); // Log generated assets
     return nodes;
-  };
+  }, [digitalAssetsData, collapsedCategories, data.clinic.name]); // digitalAssetsData is a key dependency
 
-  const ecosystemNodes = createEcosystemNodes();
   const hubNode = ecosystemNodes.find(n => n.id === 'hub');
 
   const handleNodeClick = (node: EcosystemNode) => {
-    console.log("Node clicked:", node.id, "Type:", node.type);
     if (node.type === 'hub') {
       return; 
     }
@@ -235,7 +228,7 @@ const createEcosystemNodes = (): EcosystemNode[] => {
       return;
     }
     
-    const asset = data.assets.find(a => a.id.toString() === node.id);
+    const asset = digitalAssetsData?.find(a => a.id.toString() === node.id); 
     if (asset) {
       setSelectedNode(node);
       onAssetClick(node.id);
@@ -249,16 +242,49 @@ const createEcosystemNodes = (): EcosystemNode[] => {
     }
   };
 
-const renderOverview = () => {
-    const groupedAssets = data.assets.reduce((groups, asset) => {
-      const type = asset.type || 'general';
-      if (!groups[type]) {
-        groups[type] = [];
-      }
-      groups[type].push(asset);
-      return groups;
-    }, {} as Record<string, typeof data.assets>);
+  // NEW: Loading and Error States for Visual Ecosystem
+  if (isLoading) {
+    return (
+      <div className="p-6 space-y-6">
+        <div className="flex items-center gap-2 mb-6">
+          <Globe className="h-6 w-6 text-primary" />
+          <h1 className="text-3xl font-bold">Visual Ecosystem</h1>
+        </div>
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <span className="ml-2 text-muted-foreground">Loading digital ecosystem data...</span>
+        </div>
+      </div>
+    );
+  }
 
+  if (error) {
+    return (
+      <div className="p-6 space-y-6">
+        <div className="flex items-center gap-2 mb-6">
+          <Globe className="h-6 w-6 text-primary" />
+          <h1 className="text-3xl font-bold">Visual Ecosystem</h1>
+        </div>
+        <div className="text-center py-12">
+          <AlertTriangle className="h-12 w-12 text-destructive mx-auto mb-3" />
+          <p className="text-destructive">Failed to load digital ecosystem data. Please try again.</p>
+          <p className="text-sm text-muted-foreground mt-2">{error.message}</p>
+        </div>
+      </div>
+    );
+  }
+
+  const assetsForOverview = digitalAssetsData || []; // Use live data for overview
+  const groupedAssets = assetsForOverview.reduce((groups, asset) => {
+    const type = asset.asset_type || 'general'; 
+    if (!groups[type]) {
+      groups[type] = [];
+    }
+    groups[type].push(asset);
+    return groups;
+  }, {} as Record<string, typeof digitalAssetsData>);
+
+  const renderOverview = () => {
     return (
       <div className="space-y-6">
         <div className="text-center mb-8">
@@ -289,7 +315,7 @@ const renderOverview = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {Object.entries(groupedAssets).map(([type, assets]) => {
             const Icon = getAssetIcon(type);
-            const typeLabel = type ? type.replace('_', ' ').toUpperCase() : 'General';
+            const typeLabel = type ? type.replace('_', ' ').toUpperCase() : 'GENERAL';
             
             return (
               <Card key={type} className="hover:shadow-lg transition-all duration-300">
@@ -307,17 +333,20 @@ const renderOverview = () => {
                     return (
                       <div 
                         key={asset.id}
-                        className={`p-3 rounded-lg border cursor-pointer transition-all duration-200 hover:scale-105 ${getStatusColor(asset.status)}`}
+                        className={cn(
+                          "p-3 rounded-lg border cursor-pointer transition-all duration-200 hover:scale-105",
+                          getStatusColor(asset.status)
+                        )}
                         onClick={() => onAssetClick(asset.id.toString())}
                       >
                         <div className="flex items-center justify-between mb-2">
-                          <h4 className="font-medium text-sm">{asset.name}</h4>
+                          <h4 className="font-medium text-sm">{asset.asset_name}</h4>
                           <StatusIcon className="h-4 w-4" />
                         </div>
                         
                         <div className="flex items-center justify-between text-xs">
                           <span className="opacity-75">
-                            Updated: {asset.lastUpdated ? new Date(asset.lastUpdated).toLocaleDateString() : 'N/A'}
+                            Updated: {asset.last_updated ? new Date(asset.last_updated).toLocaleDateString() : 'N/A'}
                           </span>
                           <Badge 
                             variant={asset.priority === 'high' ? 'destructive' : 
@@ -328,17 +357,19 @@ const renderOverview = () => {
                           </Badge>
                         </div>
                         
-                        {asset.metrics && Object.keys(asset.metrics).length > 0 && ( 
+                        {asset.key_metrics_json && Object.keys(asset.key_metrics_json).length > 0 ? (
                           <div className="mt-2 pt-2 border-t border-current/20">
                             <div className="grid grid-cols-2 gap-1 text-xs">
-                              {Object.entries(asset.metrics).slice(0, 2).map(([key, value]) => (
+                              {Object.entries(asset.key_metrics_json).slice(0, 2).map(([key, value]) => (
                                 <div key={key} className="flex justify-between">
                                   <span className="opacity-75">{key}:</span>
-                                  <span className="font-medium">{value}</span>
+                                  <span className="font-medium">{typeof value === 'number' ? value.toLocaleString() : value}</span>
                                 </div>
                               ))}
                             </div>
                           </div>
+                        ) : (
+                          <span className="text-muted-foreground text-sm">No metrics</span>
                         )}
                         
                         {asset.url && (
@@ -348,7 +379,7 @@ const renderOverview = () => {
                             className="w-full mt-2 h-6 text-xs"
                             onClick={(e) => {
                               e.stopPropagation();
-                              onAssetClick?.(asset.id.toString());
+                              window.open(asset.url, '_blank');
                             }}
                           >
                             <ExternalLink className="h-3 w-3 mr-1" />
@@ -376,19 +407,19 @@ const renderOverview = () => {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="text-center">
                 <div className="text-2xl font-bold text-success">
-                  {data.assets.filter(a => a.status === 'active').length}
+                  {assetsForOverview.filter(a => a.status === 'active').length}
                 </div>
                 <p className="text-sm text-muted-foreground">Active Assets</p>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-warning">
-                  {data.assets.filter(a => a.status === 'warning').length}
+                  {assetsForOverview.filter(a => a.status === 'warning').length}
                 </div>
                 <p className="text-sm text-muted-foreground">Need Attention</p>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-destructive">
-                  {data.assets.filter(a => a.status === 'critical').length}
+                  {assetsForOverview.filter(a => a.status === 'critical').length}
                 </div>
                 <p className="text-sm text-muted-foreground">Critical Issues</p>
               </div>
@@ -477,9 +508,10 @@ const renderOverview = () => {
                   return (
                     <div
                       key={node.id}
-                      className={`absolute transform -translate-x-1/2 -translate-y-1/2 cursor-pointer transition-all duration-200 ${
-                        isHovered || isSelected ? 'scale-110 z-10' : 'z-5'
-                      }`}
+                      className={cn(
+                        `absolute transform -translate-x-1/2 -translate-y-1/2 cursor-pointer transition-all duration-200`,
+                        (isHovered || isSelected) ? 'scale-110 z-10' : 'z-5'
+                      )}
                       style={{
                         left: `${node.x}px`,
                         top: `${node.y}px`,
@@ -490,18 +522,18 @@ const renderOverview = () => {
                     >
                       {/* Node circle */}
                       <div
-                        className={`
-                          relative flex items-center justify-center rounded-full border-2 shadow-lg
-                          ${node.type === 'hub' 
+                        className={cn(
+                          `relative flex items-center justify-center rounded-full border-2 shadow-lg`,
+                          node.type === 'hub' 
                             ? 'w-20 h-20 bg-gradient-to-br from-primary to-primary-glow border-primary text-white' 
                             : node.type === 'category'
                             ? 'w-16 h-16 bg-gradient-to-br from-slate-200 to-slate-300 border-slate-400 text-slate-700'
                             : `w-12 h-12 ${getStatusColor(node.status)} border-2`
-                          }
-                          ${isHovered ? 'shadow-xl' : ''}
-                        `}
+                        )}
                       >
-                        <Icon className={`${node.type === 'hub' ? 'h-8 w-8' : node.type === 'category' ? 'h-6 w-6' : 'h-5 w-5'}`} />
+                        <Icon className={cn(
+                          node.type === 'hub' ? 'h-8 w-8' : node.type === 'category' ? 'h-6 w-6' : 'h-5 w-5'
+                        )} />
                         
                         {/* Collapse/Expand indicator for categories */}
                         {node.type === 'category' && (
@@ -523,11 +555,11 @@ const renderOverview = () => {
                       </div>
 
                       {/* Node label */}
-                      <div className={`
-                        absolute top-full mt-2 left-1/2 transform -translate-x-1/2 
-                        text-center text-xs font-medium whitespace-nowrap
-                        ${node.type === 'hub' ? 'text-primary font-bold' : 'text-slate-700 dark:text-slate-300'}
-                      `}>
+                      <div className={cn(
+                        `absolute top-full mt-2 left-1/2 transform -translate-x-1/2 
+                        text-center text-xs font-medium whitespace-nowrap`,
+                        node.type === 'hub' ? 'text-primary font-bold' : 'text-slate-700 dark:text-slate-300'
+                      )}>
                         {node.name}
                         {node.type !== 'hub' && node.type !== 'category' && (
                           <div className="text-xs text-muted-foreground">
