@@ -1,5 +1,5 @@
 // obesetomato/dashboard/Dashboard-c1fdb5a0f45fa9f7c956a11b09f4801f23b45082/src/components/AssetLog.tsx
-import { useState } from 'react';
+import React, { useState } from 'react'; // ADDED: import React
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
@@ -22,7 +22,7 @@ import {
   Users, 
   Megaphone,
   ExternalLink,
-  Eye, // Keep Eye icon for Asset Detail Dialog, if not removing from there.
+  Eye, 
   TrendingUp,
   Calendar,
   Plus,
@@ -30,7 +30,7 @@ import {
   Trash2,
   AlertTriangle, 
   CheckCircle,
-  Pencil // Added Pencil icon for Edit button
+  Pencil 
 } from 'lucide-react';
 import { useDigitalAssets, useCreateDigitalAsset, useUpdateDigitalAsset } from '../hooks/useSupabaseAPI';
 import { useToast } from '../hooks/use-toast';
@@ -39,12 +39,12 @@ import { cn } from '@/lib/utils';
 
 interface AssetLogProps {
   data?: any; 
-  onAssetClick?: (assetId: string) => void; // This prop can still be used for parent component logic if needed.
+  onAssetClick?: (assetId: string) => void; 
 }
 
 interface NewDigitalAsset {
   asset_name: string;
-  asset_type: 'business_profile' | 'website' | 'social_media' | 'directory' | 'review_platform' | 'advertising' | 'content_platform' | 'analytics_tool'; // Added new types for consistency
+  asset_type: 'business_profile' | 'website' | 'social_media' | 'directory' | 'review_platform' | 'advertising' | 'content_platform' | 'analytics_tool'; 
   status: 'active' | 'warning' | 'critical' | 'inactive';
   priority: 'high' | 'medium' | 'low';
   url: string;
@@ -59,7 +59,7 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
     priority: 'medium',
     url: ''
   });
-  const [selectedAsset, setSelectedAsset] = useState<DigitalAsset | null>(null); // State for asset detail dialog
+  const [selectedAsset, setSelectedAsset] = useState<DigitalAsset | null>(null); 
   const { toast } = useToast();
 
   // Supabase hooks
@@ -181,8 +181,7 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
         description: `Edit functionality for "${selectedAsset.asset_name}" is coming soon!`,
         type: "info"
       });
-      // Future: Implement a dedicated edit form dialog or navigate to edit page
-      setSelectedAsset(null); // Close the view dialog
+      setSelectedAsset(null); 
     }
   };
 
@@ -402,7 +401,7 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
                         "hover:bg-muted/50 cursor-pointer border-l-4", 
                         getPriorityBorderColor(asset.priority) 
                       )}
-                      onClick={() => setSelectedAsset(asset)} // Open dialog on row click
+                      onClick={() => setSelectedAsset(asset)} 
                     >
                       <TableCell>
                         <Icon className="h-4 w-4 text-primary" />
@@ -446,7 +445,6 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
                       </TableCell>
                       <TableCell>
                         <div className="flex space-x-1">
-                          {/* Removed redundant Eye button, row click handles view */}
                           {asset.url && (
                             <Button
                               variant="ghost"
@@ -472,7 +470,6 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
 
       {/* Asset Detail Dialog (Now used by row click) */}
       <Dialog open={!!selectedAsset} onOpenChange={() => setSelectedAsset(null)}>
-        {/* Changed max-w-2xl for larger popup as requested */}
         <DialogContent className="max-w-2xl"> 
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -486,7 +483,7 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
           </DialogHeader>
           
           {selectedAsset && (
-            <div className="space-y-6 py-4"> {/* Added py-4 for consistent padding */}
+            <div className="space-y-6 py-4"> 
               {/* Status and Priority */}
               <div className="flex items-center gap-4">
                 <Badge className={getStatusColor(selectedAsset.status)}>
@@ -538,10 +535,10 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
               </div>
 
               {/* Actions */}
-              <div className="flex justify-end gap-2 mt-6"> {/* Moved actions to flex-end and added top margin */}
+              <div className="flex justify-end gap-2 mt-6"> 
                 <Button 
                     variant="secondary" 
-                    onClick={handleEditAsset} // Handle edit click
+                    onClick={handleEditAsset} 
                 >
                     <Pencil className="h-4 w-4 mr-2" />
                     Edit Asset
@@ -557,9 +554,12 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
                 )}
                 <Button
                   variant="outline"
-                  onClick={() => onNavigate('assets', selectedAsset.id.toString())} // Navigate to Asset Log (current page) with specific asset selected
+                  onClick={() => {
+                    setSelectedAsset(null); 
+                    onAssetClick?.(selectedAsset.id.toString()); 
+                  }}
                 >
-                  <Eye className="h-4 w-4 mr-2" /> {/* Re-added Eye icon for 'View Details' button if desired, or can be removed */}
+                  <Eye className="h-4 w-4 mr-2" /> 
                   View Details
                 </Button>
               </div>
