@@ -33,7 +33,9 @@ import {
   Pencil,
   Phone, 
   MapPin, 
-  Clock 
+  Clock,
+  MessageSquare, // Added for Q&A
+  FileText // Added for Posts/Content
 } from 'lucide-react'; 
 import { useDigitalAssets, useCreateDigitalAsset, useUpdateDigitalAsset } from '../hooks/useSupabaseAPI';
 import { useToast } from '../hooks/use-toast';
@@ -481,7 +483,7 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
         </Card>
       ))}
 
-      {/* Asset Detail Dialog (Now with expanded content for Business Profiles) */}
+      {/* Asset Detail Dialog (Now with expanded content for Business Profiles and other types) */}
       <Dialog open={!!selectedAsset} onOpenChange={() => setSelectedAsset(null)}>
         <DialogContent className="max-w-3xl overflow-y-auto max-h-[90vh]"> 
           <DialogHeader>
@@ -496,60 +498,66 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
           </DialogHeader>
           
           {selectedAsset && (
-            <div className="space-y-6 py-4"> 
-              {/* Status and Priority */}
-              <div className="flex items-center gap-4">
-                <Badge className={getStatusBadge(selectedAsset.status || '')}> 
-                  {selectedAsset.status}
-                </Badge>
-                <Badge variant={selectedAsset.priority === 'high' ? 'destructive' : 
-                               selectedAsset.priority === 'medium' ? 'default' : 'secondary'}>
-                  {selectedAsset.priority} priority
-                </Badge>
-              </div>
-
-              {/* URL */}
-              {selectedAsset.url && (
-                <div>
-                  <h4 className="font-semibold mb-2">URL</h4>
-                  <a href={selectedAsset.url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline break-all">
-                    {selectedAsset.url}
-                  </a>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4"> 
+              {/* Column 1: General Info & Common Metrics */}
+              <div className="space-y-6">
+                {/* Status and Priority */}
+                <div className="flex items-center gap-4">
+                  <Badge className={getStatusBadge(selectedAsset.status || '')}> 
+                    {selectedAsset.status}
+                  </Badge>
+                  <Badge variant={selectedAsset.priority === 'high' ? 'destructive' : 
+                                 selectedAsset.priority === 'medium' ? 'default' : 'secondary'}>
+                    {selectedAsset.priority} priority
+                  </Badge>
                 </div>
-              )}
 
-              {/* Performance Metrics (Generic from key_metrics_json) */}
-              {selectedAsset.key_metrics_json && Object.keys(selectedAsset.key_metrics_json).length > 0 && (
-                <div>
-                  <h4 className="font-semibold mb-3">Performance Metrics</h4>
-                  <div className="grid grid-cols-2 gap-4">
-                    {Object.entries(selectedAsset.key_metrics_json).map(([key, value]) => (
-                      <div key={key} className="bg-muted/50 p-3 rounded-lg">
-                        <div className="text-sm text-muted-foreground">{key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</div> 
-                        <div className="text-lg font-semibold">
-                          {typeof value === 'number' ? value.toLocaleString() : value}
+                {/* URL */}
+                {selectedAsset.url && (
+                  <div>
+                    <h4 className="font-semibold mb-2">URL</h4>
+                    <a href={selectedAsset.url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline break-all">
+                      {selectedAsset.url}
+                    </a>
+                  </div>
+                )}
+
+                {/* Performance Metrics (Generic from key_metrics_json) */}
+                {selectedAsset.key_metrics_json && Object.keys(selectedAsset.key_metrics_json).length > 0 && (
+                  <div>
+                    <h4 className="font-semibold mb-3">Performance Metrics (Summary)</h4>
+                    <div className="grid grid-cols-2 gap-4">
+                      {Object.entries(selectedAsset.key_metrics_json).map(([key, value]) => (
+                        // Display the first few key metrics as a general overview
+                        <div key={key} className="bg-muted/50 p-3 rounded-lg">
+                          <div className="text-sm text-muted-foreground">{key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</div> 
+                          <div className="text-lg font-semibold">
+                            {typeof value === 'number' ? value.toLocaleString() : value}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* General Info (from DigitalAsset schema) */}
+                <div>
+                  <h4 className="font-semibold mb-2">General Information</h4>
+                  <div className="grid grid-cols-2 gap-2 text-sm text-muted-foreground">
+                    <div><strong>Type:</strong> {selectedAsset.asset_type ? selectedAsset.asset_type.replace(/_/g, ' ').toUpperCase() : 'N/A'}</div>
+                    <div><strong>Platform ID:</strong> {selectedAsset.platform_id_external || 'N/A'}</div>
+                    <div><strong>Created:</strong> {selectedAsset.created_at ? new Date(selectedAsset.created_at).toLocaleDateString() : 'N/A'}</div>
+                    <div><strong>Last Updated:</strong> {selectedAsset.updated_at ? new Date(selectedAsset.updated_at).toLocaleDateString() : (selectedAsset.created_at ? new Date(selectedAsset.created_at).toLocaleDateString() : 'N/A')}</div>
                   </div>
                 </div>
-              )}
-
-              {/* General Info (from DigitalAsset schema) */}
-              <div>
-                <h4 className="font-semibold mb-2">General Information</h4>
-                <div className="grid grid-cols-2 gap-2 text-sm text-muted-foreground">
-                  <div><strong>Type:</strong> {selectedAsset.asset_type ? selectedAsset.asset_type.replace(/_/g, ' ').toUpperCase() : 'N/A'}</div>
-                  <div><strong>Platform ID:</strong> {selectedAsset.platform_id_external || 'N/A'}</div>
-                  <div><strong>Created:</strong> {selectedAsset.created_at ? new Date(selectedAsset.created_at).toLocaleDateString() : 'N/A'}</div>
-                  <div><strong>Last Updated:</strong> {selectedAsset.updated_at ? new Date(selectedAsset.updated_at).toLocaleDateString() : (selectedAsset.created_at ? new Date(selectedAsset.created_at).toLocaleDateString() : 'N/A')}</div>
-                </div>
               </div>
 
-              {/* Specific GBP Details (if asset_type is business_profile) */}
-              {selectedAsset.asset_type === 'business_profile' && selectedAsset.key_metrics_json && (
-                <div className="space-y-6 pt-6 border-t border-border"> {/* Added top border for separation */}
-                  <h3 className="text-xl font-bold">Google Business Profile Details</h3> {/* Main heading for GBP section */}
+              {/* Column 2: Specific Details based on asset_type */}
+
+              {/* Business Profile Details */}
+              {selectedAsset.asset_type === 'business_profile' && selectedAsset.key_metrics_json && selectedAsset.key_metrics_json.businessInformation && (
+                <div className="space-y-6 pt-6 md:pt-0 md:border-l md:pl-6 border-border"> 
+                  <h3 className="text-xl font-bold">Business Profile Details</h3>
 
                   {selectedAsset.key_metrics_json.businessInformation && (
                     <div>
@@ -715,6 +723,83 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
                     </div>
                   )}
                 </div>
+              )}
+
+              {/* Website Specific Details */}
+              {selectedAsset.asset_type === 'website' && selectedAsset.key_metrics_json && (
+                <div className="space-y-6 pt-6 md:pt-0 md:border-l md:pl-6 border-border">
+                  <h3 className="text-xl font-bold">Website Performance Details</h3>
+                  <div className="grid grid-cols-1 gap-4 text-sm text-muted-foreground">
+                    {selectedAsset.key_metrics_json.sessions && <p><strong>Total Sessions:</strong> {selectedAsset.key_metrics_json.sessions.toLocaleString()}</p>}
+                    {selectedAsset.key_metrics_json.users && <p><strong>Total Users:</strong> {selectedAsset.key_metrics_json.users.toLocaleString()}</p>}
+                    {selectedAsset.key_metrics_json.pageviews && <p><strong>Total Pageviews:</strong> {selectedAsset.key_metrics_json.pageviews.toLocaleString()}</p>}
+                    {selectedAsset.key_metrics_json.bounce_rate && <p><strong>Bounce Rate:</strong> {selectedAsset.key_metrics_json.bounce_rate}%</p>}
+                    {selectedAsset.key_metrics_json.avg_session_duration_seconds && <p><strong>Avg. Session Duration:</strong> {Math.floor(selectedAsset.key_metrics_json.avg_session_duration_seconds / 60)}m {selectedAsset.key_metrics_json.avg_session_duration_seconds % 60}s</p>}
+                    {selectedAsset.key_metrics_json.forms_submitted && <p><strong>Forms Submitted:</strong> {selectedAsset.key_metrics_json.forms_submitted.toLocaleString()}</p>}
+                    {selectedAsset.key_metrics_json.seo_health_score && <p><strong>SEO Health Score:</strong> {selectedAsset.key_metrics_json.seo_health_score}%</p>}
+                    {selectedAsset.key_metrics_json.core_web_vitals && (
+                      <div>
+                        <p className="font-semibold text-foreground mt-2">Core Web Vitals:</p>
+                        <ul className="list-disc pl-5">
+                          {selectedAsset.key_metrics_json.core_web_vitals.lcp && <li>LCP: {selectedAsset.key_metrics_json.core_web_vitals.lcp}</li>}
+                          {selectedAsset.key_metrics_json.core_web_vitals.fid && <li>FID: {selectedAsset.key_metrics_json.core_web_vitals.fid}</li>}
+                          {selectedAsset.key_metrics_json.core_web_vitals.cls && <li>CLS: {selectedAsset.key_metrics_json.core_web_vitals.cls}</li>}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Social Media Specific Details */}
+              {selectedAsset.asset_type === 'social_media' && selectedAsset.key_metrics_json && (
+                <div className="space-y-6 pt-6 md:pt-0 md:border-l md:pl-6 border-border">
+                  <h3 className="text-xl font-bold">Social Media Details</h3>
+                  <div className="grid grid-cols-1 gap-4 text-sm text-muted-foreground">
+                    {selectedAsset.key_metrics_json.followers && <p><strong>Followers:</strong> {selectedAsset.key_metrics_json.followers.toLocaleString()}</p>}
+                    {selectedAsset.key_metrics_json.engagement_rate_percent && <p><strong>Engagement Rate:</strong> {selectedAsset.key_metrics_json.engagement_rate_percent}%</p>}
+                    {selectedAsset.key_metrics_json.posts_last_30d && <p><strong>Posts (last 30 days):</strong> {selectedAsset.key_metrics_json.posts_last_30d}</p>}
+                    {selectedAsset.key_metrics_json.messages_received_last_7d && <p><strong>Messages (last 7 days):</strong> {selectedAsset.key_metrics_json.messages_received_last_7d}</p>}
+                    {selectedAsset.key_metrics_json.reach && <p><strong>Reach:</strong> {selectedAsset.key_metrics_json.reach.toLocaleString()}</p>}
+                    {selectedAsset.key_metrics_json.profile_visits && <p><strong>Profile Visits:</strong> {selectedAsset.key_metrics_json.profile_visits.toLocaleString()}</p>}
+                    {selectedAsset.key_metrics_json.page_likes && <p><strong>Page Likes:</strong> {selectedAsset.key_metrics_json.page_likes.toLocaleString()}</p>}
+                    {selectedAsset.key_metrics_json.top_performing_post && (
+                      <div>
+                        <p className="font-semibold text-foreground mt-2">Top Post:</p>
+                        <p className="ml-4">{selectedAsset.key_metrics_json.top_performing_post.title}</p>
+                        <p className="ml-4 text-xs text-muted-foreground">Likes: {selectedAsset.key_metrics_json.top_performing_post.likes}, Comments: {selectedAsset.key_metrics_json.top_performing_post.comments}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Advertising Specific Details */}
+              {selectedAsset.asset_type === 'advertising' && selectedAsset.key_metrics_json && (
+                <div className="space-y-6 pt-6 md:pt-0 md:border-l md:pl-6 border-border">
+                  <h3 className="text-xl font-bold">Advertising Campaign Details</h3>
+                  <div className="grid grid-cols-1 gap-4 text-sm text-muted-foreground">
+                    {selectedAsset.key_metrics_json.campaign_budget && <p><strong>Budget:</strong> ${selectedAsset.key_metrics_json.campaign_budget.toLocaleString()}</p>}
+                    {selectedAsset.key_metrics_json.spend_current_month && <p><strong>Spend (Current Month):</strong> ${selectedAsset.key_metrics_json.spend_current_month.toLocaleString()}</p>}
+                    {selectedAsset.key_metrics_json.impressions && <p><strong>Impressions:</strong> {selectedAsset.key_metrics_json.impressions.toLocaleString()}</p>}
+                    {selectedAsset.key_metrics_json.clicks && <p><strong>Clicks:</strong> {selectedAsset.key_metrics_json.clicks.toLocaleString()}</p>}
+                    {selectedAsset.key_metrics_json.conversions && <p><strong>Conversions:</strong> {selectedAsset.key_metrics_json.conversions.toLocaleString()}</p>}
+                    {selectedAsset.key_metrics_json.ctr_percent && <p><strong>CTR:</strong> {selectedAsset.key_metrics_json.ctr_percent}%</p>}
+                    {selectedAsset.key_metrics_json.cpc && <p><strong>CPC:</strong> ${selectedAsset.key_metrics_json.cpc.toFixed(2)}</p>}
+                    {selectedAsset.key_metrics_json.conversion_value && <p><strong>Conversion Value:</strong> ${selectedAsset.key_metrics_json.conversion_value.toLocaleString()}</p>}
+                  </div>
+                </div>
+              )}
+
+              {/* Directory/Review/Content/Analytics Tool - Generic "No Specific Details" */}
+              {['directory', 'review_platform', 'content_platform', 'analytics_tool'].includes(selectedAsset.asset_type) && selectedAsset.key_metrics_json && Object.keys(selectedAsset.key_metrics_json).length === 0 && (
+                 <div className="space-y-6 pt-6 md:pt-0 md:border-l md:pl-6 border-border">
+                    <h3 className="text-xl font-bold">Additional Details</h3>
+                    <div className="text-muted-foreground">
+                        <p>No specific details beyond performance metrics available for this asset type yet.</p>
+                        <p className="text-sm mt-2">Data integration for these details is planned for future phases.</p>
+                    </div>
+                 </div>
               )}
             </div>
           )}
