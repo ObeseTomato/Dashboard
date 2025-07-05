@@ -1,12 +1,16 @@
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+// obesetomato/dashboard/Dashboard-c1fdb5a0f45fa9f7c956a11b09f4801f23b45082/src/components/StatCard.tsx
+import { Card, CardContent } from './ui/card'; // CardHeader and CardTitle removed as they were not used
 import { TrendingUp, TrendingDown, Minus, Eye, Monitor, Star, CheckCircle } from 'lucide-react';
-import { KPICard } from '../types/dashboard';
+import { KPICard } from '../types/dashboard'; // Import KPICard interface
+import { cn } from '@/lib/utils'; // Import cn for conditional class styling
 
 interface StatCardProps {
   data: KPICard;
+  clickable?: boolean; // New prop: indicates if the card is clickable
+  onClick?: () => void; // New prop: click handler for the card
 }
 
-export const StatCard = ({ data }: StatCardProps) => {
+export const StatCard = ({ data, clickable = false, onClick }: StatCardProps) => {
   const getTrendIcon = () => {
     switch (data.trend) {
       case 'up':
@@ -55,7 +59,13 @@ export const StatCard = ({ data }: StatCardProps) => {
   };
 
   return (
-    <Card className="hover:shadow-lg transition-all duration-300 border-0 shadow-sm">
+    <Card 
+      className={cn(
+        "hover:shadow-lg transition-all duration-300 border-0 shadow-sm",
+        clickable && "cursor-pointer hover:border-primary/50" // Add cursor and border hover for clickable cards
+      )}
+      onClick={clickable ? onClick : undefined} // Only assign onClick if clickable
+    >
       <CardContent className="p-6">
         <div className="flex items-center justify-between mb-4">
           <div className="text-sm font-medium text-muted-foreground">
@@ -75,6 +85,35 @@ export const StatCard = ({ data }: StatCardProps) => {
               {data.change > 0 ? '+' : ''}{data.change}% from last month
             </span>
           </div>
+
+          {/* New: Display Sub-Metric if available */}
+          {data.subMetric && (
+            <div className="text-xs text-muted-foreground pt-1 border-t border-border mt-2">
+              {data.subMetric.label}: <span className="font-semibold">{data.subMetric.value}</span>
+              {data.subMetric.change !== undefined && ( // Optional change for sub-metric
+                <span className={cn("ml-1", data.subMetric.change >=0 ? "text-success" : "text-destructive")}>
+                  {data.subMetric.change > 0 ? "+" : ""}{data.subMetric.change}%
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* Future: Placeholder for Sparkline Chart */}
+          {data.chartData && (
+            <div className="mt-2 h-10 bg-muted rounded-md flex items-center justify-center text-muted-foreground text-xs">
+              {/* Sparkline chart goes here */}
+              (Chart Placeholder)
+            </div>
+          )}
+
+          {/* Future: Placeholder for Star Rating Visual */}
+          {data.ratingVisual !== undefined && (
+            <div className="mt-2 text-yellow-500">
+              {/* Render star icons based on data.ratingVisual */}
+              {/* Example: FaStar filled stars based on value */}
+              (Stars Placeholder)
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>
