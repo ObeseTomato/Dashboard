@@ -95,8 +95,7 @@ export const VisualEcosystem = ({ data, onAssetClick, onNavigate }: VisualEcosys
     setCollapsedCategories(newCollapsed);
   };
 
-  // Create ecosystem nodes with proper centering
-  const createEcosystemNodes = (): EcosystemNode[] => {
+const createEcosystemNodes = (): EcosystemNode[] => {
     // Use container dimensions for proper centering
     const containerWidth = 1000;
     const containerHeight = 800;
@@ -124,25 +123,25 @@ export const VisualEcosystem = ({ data, onAssetClick, onNavigate }: VisualEcosys
     const categories = [
       {
         name: 'Foundational Platforms',
-        assets: data.assets.filter(a => a.type === 'gmb' || a.type === 'website'),
+        assets: data.assets.filter(a => a.asset_type === 'gmb' || a.asset_type === 'website'),
         angle: 0,
         color: '#10B981'
       },
       {
         name: 'Social Media',
-        assets: data.assets.filter(a => a.type === 'social_media'),
+        assets: data.assets.filter(a => a.asset_type === 'social_media'),
         angle: Math.PI / 3,
         color: '#8B5CF6'
       },
       {
         name: 'Directories & Reviews',
-        assets: data.assets.filter(a => a.type === 'directory' || a.type === 'review_platform'),
+        assets: data.assets.filter(a => a.asset_type === 'directory' || a.asset_type === 'review_platform'),
         angle: 2 * Math.PI / 3,
         color: '#F59E0B'
       },
       {
         name: 'Advertising',
-        assets: data.assets.filter(a => a.type === 'advertising'),
+        assets: data.assets.filter(a => a.asset_type === 'advertising'),
         angle: Math.PI,
         color: '#EF4444'
       },
@@ -200,7 +199,8 @@ export const VisualEcosystem = ({ data, onAssetClick, onNavigate }: VisualEcosys
             x: assetX,
             y: assetY,
             metrics: asset.key_metrics_json,
-            description: `${asset.asset_type.replace('_', ' ')} asset with ${asset.status} status`
+            // FIX: Add a check to ensure asset.asset_type is a string before calling .replace()
+            description: `${asset.asset_type ? asset.asset_type.replace('_', ' ') : 'Asset'} with ${asset.status} status`
           });
         });
       }
