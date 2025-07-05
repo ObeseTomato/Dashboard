@@ -731,7 +731,9 @@ export const VisualEcosystem = ({ data, onAssetClick, onNavigate }: VisualEcosys
                       <div key={key} className="bg-muted/50 p-3 rounded-lg">
                         <div className="text-sm text-muted-foreground">{key}</div>
                         <div className="text-lg font-semibold">
-                          {typeof value === 'number' ? value.toLocaleString() : value}
+                          {typeof value === 'number' ? value.toLocaleString() : 
+                           typeof value === 'object' ? 'Complex Data' : 
+                           String(value)}
                         </div>
                       </div>
                     ))}
