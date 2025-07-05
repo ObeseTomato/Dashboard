@@ -1,6 +1,6 @@
-// File: src/pages/Index.tsx
+// src/pages/Index.tsx (updated)
 
-import { useState, useEffect } from 'react'; // Ensure useEffect is imported
+import { useState, useEffect } from 'react';
 import { Header } from '../components/Header';
 import { Tabs, TabType } from '../components/Tabs';
 import { Dashboard } from '../components/Dashboard';
@@ -22,7 +22,8 @@ import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import { useNotifications } from '../contexts/NotificationContext';
 import { useRealTimeUpdates } from '../hooks/useRealTimeUpdates';
 import { produce } from 'immer';
-import { supabase } from '../lib/supabase'; // <--- ADD THIS IMPORT
+import { supabase } from '../lib/supabase'; // Keep this import
+import { Auth } from '../components/Auth'; // <--- ADD THIS IMPORT
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
@@ -31,19 +32,41 @@ const Index = () => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const { addNotification } = useNotifications();
 
-  // --- ADD THIS useEffect BLOCK ---
+  // --- MODIFIED useEffect BLOCK & NEW user state ---
+  const [user, setUser] = useState<any | null>(null); // State to hold authenticated user
+
   useEffect(() => {
-    const getUserId = async () => {
+    const checkUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
+      setUser(user); // Set user state
       if (user) {
         console.log("Authenticated User ID:", user.id);
       } else {
         console.log("No user authenticated.");
       }
     };
-    getUserId();
+
+    // Initial check
+    checkUser();
+
+    // Listen for auth state changes
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setUser(session?.user || null);
+        if (session?.user) {
+          console.log("Auth state changed: User logged in", session.user.id);
+        } else {
+          console.log("Auth state changed: User logged out");
+        }
+      }
+    );
+
+    // Cleanup listener on component unmount
+    return () => {
+      authListener?.unsubscribe();
+    };
   }, []);
-  // --- END OF ADDITION ---
+  // --- END OF MODIFICATION ---
 
   // Real-time updates
   useRealTimeUpdates({
@@ -57,7 +80,7 @@ const Index = () => {
       }));
     },
     onTaskUpdate: (data) => {
-      console.log('Task update received:', data); //
+      console.log('Task update received:', data);
     },
     onMetricUpdate: (data) => {
       console.log('Metric update received:', data);
@@ -174,6 +197,11 @@ const Index = () => {
         return <Dashboard data={dashboardData} onNavigate={handleNavigate} />;
     }
   };
+
+  // --- CONDITIONAL RENDERING BASED ON AUTHENTICATION ---
+  if (!user) {
+    return <Auth />; // Show Auth component if no user is logged in
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-muted/30">
