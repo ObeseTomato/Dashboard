@@ -382,11 +382,11 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-12"></TableHead>
-                  <TableHead>Asset Name</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Priority</TableHead>
-                  <TableHead>Last Updated</TableHead>
-                  <TableHead>Key Metrics</TableHead>
+                  <TableHead className="w-[180px]">Asset Name</TableHead> {/* Fixed width */}
+                  <TableHead className="w-[80px]">Status</TableHead>    {/* Fixed width */}
+                  <TableHead className="w-[80px]">Priority</TableHead>   {/* Fixed width */}
+                  <TableHead className="w-[120px]">Last Updated</TableHead> {/* Fixed width */}
+                  <TableHead className="w-[150px]">Key Metrics</TableHead> {/* Fixed width */}
                   <TableHead className="w-32">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -403,32 +403,32 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
                       )}
                       onClick={() => setSelectedAsset(asset)} 
                     >
-                      <TableCell className="align-middle"> 
+                      <TableCell className="align-top"> {/* Changed to align-top for consistency with multi-line content */}
                         <Icon className="h-4 w-4 text-primary" />
                       </TableCell>
-                      <TableCell className="align-middle"> 
+                      <TableCell className="align-top"> {/* Changed to align-top */}
                         <div className="flex flex-col min-w-0"> 
                           <p className="font-medium">{asset.asset_name}</p>
                           {asset.url && (
-                            <p className="text-xs text-muted-foreground truncate max-w-64">
+                            <p className="text-xs text-muted-foreground truncate max-w-[150px]"> {/* Adjusted max-w for truncation */}
                               {asset.url}
                             </p>
                           )}
                         </div>
                       </TableCell>
-                      <TableCell className="align-middle"> 
+                      <TableCell className="align-top"> {/* Changed to align-top */}
                         {getStatusBadge(asset.status || '')} 
                       </TableCell>
-                      <TableCell className="align-middle"> 
+                      <TableCell className="align-top"> {/* Changed to align-top */}
                         {getPriorityBadge(asset.priority || 'medium')} 
                       </TableCell>
-                      <TableCell className="align-middle"> 
+                      <TableCell className="align-top"> {/* Changed to align-top */}
                         <div className="flex items-center space-x-1 text-sm text-muted-foreground">
                           <Calendar className="h-3 w-3" />
                           <span>{asset.last_updated ? new Date(asset.last_updated).toLocaleDateString() : 'N/A'}</span>
                         </div>
                       </TableCell>
-                      <TableCell className="align-middle"> 
+                      <TableCell className="align-top"> {/* Changed to align-top */}
                         {asset.key_metrics_json && Object.keys(asset.key_metrics_json).length > 0 ? (
                           <div className="space-y-1">
                             {Object.entries(asset.key_metrics_json).slice(0, 2).map(([key, value]: [string, any]) => (
@@ -443,7 +443,7 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
                           <span className="text-muted-foreground text-sm">No metrics</span>
                         )}
                       </TableCell>
-                      <TableCell className="align-middle"> 
+                      <TableCell className="align-top"> {/* Changed to align-top */}
                         <div className="flex space-x-1">
                            <Button
                               variant="ghost"
