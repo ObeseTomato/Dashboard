@@ -15,21 +15,26 @@ const getAuthToken = async () => {
 
 // A helper function to standardize fetching from your local API
 const fetchFromApi = async (endpoint: string) => {
-    const response = await fetch(endpoint);
-    if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || `Failed to fetch data from ${endpoint}`);
+    try {
+        const response = await fetch(endpoint);
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || `Failed to fetch data from ${endpoint}`);
+        }
+        const result = await response.json();
+        // This handles cases where your API returns { data: [...] } or just [...]
+        return result.data || result;
+    } catch (error) {
+        console.error(`API fetch error from ${endpoint}:`, error);
+        throw error;
     }
-    const result = await response.json();
-    // This handles cases where your API returns { data: [...] } or just [...]
-    return result.data || result;
 };
 
 
 // --- HOOKS FOR READING DATA ---
 
 export const useKpiTimeSeries = () => {
-    return useQuery({
+    return useQuery<Tables['kpi_time_series']['Row'][], Error>({
         queryKey: ['kpi-time-series'],
         queryFn: () => fetchFromApi('/api/kpis'),
         staleTime: 5 * 60 * 1000,
@@ -38,11 +43,10 @@ export const useKpiTimeSeries = () => {
 };
 
 export const useLatestKPIs = () => {
-    // This hook now uses the same data as useKpiTimeSeries
-    // but processes it on the client-side to find the latest values.
+    // This hook derives its data from the main time-series query
     const { data, ...rest } = useKpiTimeSeries();
   
-    const latestKPIs = data ? data.reduce((acc: any, kpi: any) => {
+    const latestKPIs = data ? data.reduce((acc: Record<string, Tables['kpi_time_series']['Row']>, kpi) => {
         if (!acc[kpi.metric_name] || new Date(kpi.date) > new Date(acc[kpi.metric_name].date)) {
             acc[kpi.metric_name] = kpi;
         }
@@ -53,7 +57,7 @@ export const useLatestKPIs = () => {
 };
 
 export const useTasks = () => {
-    return useQuery({
+    return useQuery<Tables['tasks']['Row'][], Error>({
         queryKey: ['tasks'],
         queryFn: () => fetchFromApi('/api/tasks'),
         staleTime: 2 * 60 * 1000,
@@ -61,7 +65,7 @@ export const useTasks = () => {
 };
 
 export const useReviews = () => {
-    return useQuery({
+    return useQuery<Tables['reviews']['Row'][], Error>({
         queryKey: ['reviews'],
         queryFn: () => fetchFromApi('/api/reviews'),
         staleTime: 5 * 60 * 1000,
@@ -69,7 +73,7 @@ export const useReviews = () => {
 };
 
 export const useCompetitors = () => {
-    return useQuery({
+    return useQuery<Tables['competitors']['Row'][], Error>({
         queryKey: ['competitors'],
         queryFn: () => fetchFromApi('/api/competitors'),
         staleTime: 10 * 60 * 1000,
@@ -77,7 +81,7 @@ export const useCompetitors = () => {
 };
 
 export const useWebPages = () => {
-    return useQuery({
+    return useQuery<Tables['web_pages']['Row'][], Error>({
         queryKey: ['web-pages'],
         queryFn: () => fetchFromApi('/api/web_pages'),
         staleTime: 5 * 60 * 1000,
@@ -85,7 +89,7 @@ export const useWebPages = () => {
 };
 
 export const useDigitalAssets = () => {
-    return useQuery({
+    return useQuery<Tables['digital_assets']['Row'][], Error>({
         queryKey: ['digital-assets'],
         queryFn: () => fetchFromApi('/api/digital_assets'),
         staleTime: 5 * 60 * 1000,
@@ -93,27 +97,17 @@ export const useDigitalAssets = () => {
 };
 
 export const useDocuments = () => {
-    return useQuery({
+    return useQuery<Tables['documents']['Row'][], Error>({
         queryKey: ['documents'],
-        queryFn: async () => {
-            // Assuming you will create an /api/documents.js endpoint
-            const response = await fetch('/api/documents');
-            if (!response.ok) throw new Error('Failed to fetch documents');
-            return response.json();
-        },
+        queryFn: () => fetchFromApi('/api/documents'),
         staleTime: 5 * 60 * 1000,
     });
 };
 
 export const useAgentOutputs = () => {
-    return useQuery({
+    return useQuery<Tables['agent_outputs']['Row'][], Error>({
         queryKey: ['agent-outputs'],
-        queryFn: async () => {
-             // Assuming you will create an /api/agent_outputs.js endpoint
-            const response = await fetch('/api/agent_outputs');
-            if (!response.ok) throw new Error('Failed to fetch agent outputs');
-            return response.json();
-        },
+        queryFn: () => fetchFromApi('/api/agent_outputs'),
         staleTime: 2 * 60 * 1000,
     });
 };
@@ -121,131 +115,74 @@ export const useAgentOutputs = () => {
 
 // --- HOOKS FOR WRITING DATA (Mutations) ---
 
-export const useCreateTask = () => {
+// Generic mutation function factory
+const createApiMutation = <TVariables, TData>(
+    entity: string,
+    method: 'POST' | 'PUT' | 'DELETE',
+    queryKeyToInvalidate: string[]
+) => {
     const queryClient = useQueryClient();
-    return useMutation({
-        mutationFn: async (newTask: Tables['tasks']['Insert']) => {
+    return useMutation<TData, Error, TVariables>({
+        mutationFn: async (variables) => {
             const token = await getAuthToken();
-            const response = await fetch('/api/tasks', {
-                method: 'POST',
+            // Handle ID for PUT/DELETE in URL
+            const endpoint = (method === 'PUT' || method === 'DELETE') && variables && 'id' in variables
+                ? `/api/${entity}/${(variables as any).id}`
+                : `/api/${entity}`;
+
+            const response = await fetch(endpoint, {
+                method,
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`,
                 },
-                body: JSON.stringify(newTask),
+                body: method !== 'GET' ? JSON.stringify(variables) : undefined,
             });
             if (!response.ok) {
                 const errorData = await response.json();
-                throw new Error(errorData.error || 'Failed to create task');
+                throw new Error(errorData.error || `Failed to ${method.toLowerCase()} ${entity}`);
             }
             return response.json();
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['tasks'] });
+            queryClient.invalidateQueries({ queryKey: queryKeyToInvalidate });
         },
     });
 };
 
-export const useUpdateTask = () => {
-    const queryClient = useQueryClient();
-    return useMutation({
-        mutationFn: async ({ id, updates }: { id: number; updates: Tables['tasks']['Update'] }) => {
-            const token = await getAuthToken();
-            // Note: This assumes your api/tasks.js can handle PUT requests.
-            const response = await fetch(`/api/tasks`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`,
-                },
-                body: JSON.stringify({ id, ...updates }),
-            });
-            if (!response.ok) throw new Error('Failed to update task');
-            return response.json();
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['tasks'] });
-        },
-    });
-};
+// Task Mutations
+export const useCreateTask = () => createApiMutation<Tables['tasks']['Insert'], Tables['tasks']['Row']>('tasks', 'POST', ['tasks']);
+export const useUpdateTask = () => createApiMutation<{ id: number; updates: Tables['tasks']['Update'] }, Tables['tasks']['Row']>('tasks', 'PUT', ['tasks']);
+export const useDeleteTask = () => createApiMutation<{ id: number }, { id: number }>('tasks', 'DELETE', ['tasks']);
 
-export const useDeleteTask = () => {
-    const queryClient = useQueryClient();
-    return useMutation({
-        mutationFn: async (id: number) => {
-            const token = await getAuthToken();
-            // Note: This assumes your api/tasks.js can handle DELETE requests.
-            const response = await fetch(`/api/tasks`, {
-                method: 'DELETE',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`,
-                },
-                body: JSON.stringify({ id }),
-            });
-            if (!response.ok) throw new Error('Failed to delete task');
-            return response.json();
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['tasks'] });
-        },
-    });
-};
+// Web Page Mutations
+export const useCreateWebPage = () => createApiMutation<Tables['web_pages']['Insert'], Tables['web_pages']['Row']>('web_pages', 'POST', ['web-pages']);
+export const useUpdateWebPage = () => createApiMutation<{ id: number; updates: Tables['web_pages']['Update'] }, Tables['web_pages']['Row']>('web_pages', 'PUT', ['web-pages']);
 
-// Placeholder mutations for other entities
-// You can expand these following the useCreateTask pattern
+// Digital Asset Mutations
+export const useCreateDigitalAsset = () => createApiMutation<Tables['digital_assets']['Insert'], Tables['digital_assets']['Row']>('digital_assets', 'POST', ['digital-assets']);
+export const useUpdateDigitalAsset = () => createApiMutation<{ id: number; updates: Tables['digital_assets']['Update'] }, Tables['digital_assets']['Row']>('digital_assets', 'PUT', ['digital-assets']);
 
-export const useCreateWebPage = () => {
-    const queryClient = useQueryClient();
-    return useMutation({
-        mutationFn: async (newPage: Tables['web_pages']['Insert']) => {
-            // TODO: Implement API call to POST /api/web_pages
-            console.log("Creating web page:", newPage);
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['web-pages'] });
-        },
-    });
-};
+// Review Mutations
+export const useCreateReview = () => createApiMutation<Tables['reviews']['Insert'], Tables['reviews']['Row']>('reviews', 'POST', ['reviews']);
+export const useUpdateReview = () => createApiMutation<{ id: number; updates: Tables['reviews']['Update'] }, Tables['reviews']['Row']>('reviews', 'PUT', ['reviews']);
+export const useDeleteReview = () => createApiMutation<{id: number}, {id: number}>('reviews', 'DELETE', ['reviews']);
 
-export const useUpdateWebPage = () => {
-    const queryClient = useQueryClient();
-    return useMutation({
-        mutationFn: async ({ id, updates }: { id: number; updates: Tables['web_pages']['Update'] }) => {
-            // TODO: Implement API call to PUT /api/web_pages
-            console.log("Updating web page:", id, updates);
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['web-pages'] });
-        },
-    });
-};
+// Competitor Mutations
+export const useCreateCompetitor = () => createApiMutation<Tables['competitors']['Insert'], Tables['competitors']['Row']>('competitors', 'POST', ['competitors']);
+export const useUpdateCompetitor = () => createApiMutation<{ id: number; updates: Tables['competitors']['Update'] }, Tables['competitors']['Row']>('competitors', 'PUT', ['competitors']);
+export const useDeleteCompetitor = () => createApiMutation<{id: number}, {id: number}>('competitors', 'DELETE', ['competitors']);
 
-export const useCreateDigitalAsset = () => {
-    const queryClient = useQueryClient();
-    return useMutation({
-        mutationFn: async (newAsset: Tables['digital_assets']['Insert']) => {
-            // TODO: Implement API call to POST /api/digital_assets
-            console.log("Creating asset:", newAsset);
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['digital-assets'] });
-        },
-    });
-};
+// Document Mutations
+export const useCreateDocument = () => createApiMutation<Tables['documents']['Insert'], Tables['documents']['Row']>('documents', 'POST', ['documents']);
+export const useUpdateDocument = () => createApiMutation<{ id: number; updates: Tables['documents']['Update'] }, Tables['documents']['Row']>('documents', 'PUT', ['documents']);
+export const useDeleteDocument = () => createApiMutation<{id: number}, {id: number}>('documents', 'DELETE', ['documents']);
 
-export const useUpdateDigitalAsset = () => {
-    const queryClient = useQueryClient();
-    return useMutation({
-        mutationFn: async ({ id, updates }: { id: number; updates: Tables['digital_assets']['Update'] }) => {
-            // TODO: Implement API call to PUT /api/digital_assets
-            console.log("Updating asset:", id, updates);
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['digital-assets'] });
-        },
-    });
-};
+// Agent Output Mutations
+export const useCreateAgentOutput = () => createApiMutation<Tables['agent_outputs']['Insert'], Tables['agent_outputs']['Row']>('agent_outputs', 'POST', ['agent-outputs']);
+export const useUpdateAgentOutput = () => createApiMutation<{ id: number; updates: Tables['agent_outputs']['Update'] }, Tables['agent_outputs']['Row']>('agent_outputs', 'PUT', ['agent-outputs']);
+export const useDeleteAgentOutput = () => createApiMutation<{id: number}, {id: number}>('agent_outputs', 'DELETE', ['agent-outputs']);
+
 
 // --- AI HOOK ---
 export const useAIChat = () => {
