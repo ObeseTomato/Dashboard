@@ -1,4 +1,4 @@
-// src/pages/Index.tsx (updated)
+// obesetomato/dashboard/Dashboard-c1fdb5a0f45fa9f7c956a11b09f4801f23b45082/src/pages/Index.tsx
 
 import { useState, useEffect } from 'react';
 import { Header } from '../components/Header';
@@ -6,7 +6,6 @@ import { Tabs, TabType } from '../components/Tabs';
 import { Dashboard } from '../components/Dashboard';
 import { VisualEcosystem } from '../components/VisualEcosystem';
 import { AssetLog } from '../components/AssetLog';
-import { Tasks } from '../components/Tasks';
 import { TaskManagement } from '../components/TaskManagement';
 import { WebPages } from '../components/WebPages';
 import { Performance } from '../components/Performance';
@@ -22,8 +21,8 @@ import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import { useNotifications } from '../contexts/NotificationContext';
 import { useRealTimeUpdates } from '../hooks/useRealTimeUpdates';
 import { produce } from 'immer';
-import { supabase } from '../lib/supabase'; // Keep this import
-import { Auth } from '../components/Auth'; // <--- ADD THIS IMPORT
+import { supabase } from '../lib/supabase';
+import { Auth } from '../components/Auth'; 
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
@@ -32,13 +31,12 @@ const Index = () => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const { addNotification } = useNotifications();
 
-  // --- MODIFIED useEffect BLOCK & NEW user state ---
-  const [user, setUser] = useState<any | null>(null); // State to hold authenticated user
+  const [user, setUser] = useState<any | null>(null);
 
   useEffect(() => {
     const checkUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      setUser(user); // Set user state
+      setUser(user);
       if (user) {
         console.log("Authenticated User ID:", user.id);
       } else {
@@ -46,11 +44,10 @@ const Index = () => {
       }
     };
 
-    // Initial check
     checkUser();
 
-    // Listen for auth state changes
-    const { data: authListener } = supabase.auth.onAuthStateChange(
+    // Correct way to get the subscription object with unsubscribe method
+    const { data: { subscription: authSubscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
         setUser(session?.user || null);
         if (session?.user) {
@@ -63,10 +60,9 @@ const Index = () => {
 
     // Cleanup listener on component unmount
     return () => {
-      authListener?.unsubscribe();
+      authSubscription?.unsubscribe(); // Correctly call unsubscribe on the subscription object
     };
   }, []);
-  // --- END OF MODIFICATION ---
 
   // Real-time updates
   useRealTimeUpdates({
@@ -198,9 +194,8 @@ const Index = () => {
     }
   };
 
-  // --- CONDITIONAL RENDERING BASED ON AUTHENTICATION ---
   if (!user) {
-    return <Auth />; // Show Auth component if no user is logged in
+    return <Auth />;
   }
 
   return (
