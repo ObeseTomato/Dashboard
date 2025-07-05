@@ -3,12 +3,11 @@ import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
 
-// https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
-    // The proxy has been removed, as the frontend will now call Supabase directly.
+    // The proxy configuration has been correctly removed.
   },
   plugins: [
     react(),
