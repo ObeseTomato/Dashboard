@@ -1,5 +1,4 @@
 // obesetomato/dashboard/Dashboard-c1fdb5a0f45fa9f7c956a11b09f4801f23b45082/src/components/AssetLog.tsx
-
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
@@ -19,7 +18,7 @@ import {
 } from './ui/table';
 import { 
   Globe, 
-  Star, // Change icon for business_profile
+  Star, 
   Users, 
   Megaphone,
   ExternalLink,
@@ -28,10 +27,14 @@ import {
   Calendar,
   Plus,
   Loader2,
-  Trash2
+  Trash2,
+  AlertTriangle, // Added for error state
+  CheckCircle // Added for loading state
 } from 'lucide-react';
 import { useDigitalAssets, useCreateDigitalAsset, useUpdateDigitalAsset } from '../hooks/useSupabaseAPI';
 import { useToast } from '../hooks/use-toast';
+import { DigitalAsset } from '../types/dashboard'; // Import DigitalAsset type
+import { cn } from '@/lib/utils'; // Import cn
 
 interface AssetLogProps {
   data?: any; // Keep for compatibility but use Supabase data
@@ -40,7 +43,7 @@ interface AssetLogProps {
 
 interface NewDigitalAsset {
   asset_name: string;
-  asset_type: 'business_profile' | 'website' | 'social_media' | 'directory' | 'review_platform' | 'advertising'; // <--- Changed 'gmb' to 'business_profile'
+  asset_type: 'business_profile' | 'website' | 'social_media' | 'directory' | 'review_platform' | 'advertising';
   status: 'active' | 'warning' | 'critical' | 'inactive';
   priority: 'high' | 'medium' | 'low';
   url: string;
@@ -55,6 +58,7 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
     priority: 'medium',
     url: ''
   });
+  const [selectedAsset, setSelectedAsset] = useState<DigitalAsset | null>(null); // State for asset detail dialog
   const { toast } = useToast();
 
   // Supabase hooks
@@ -65,10 +69,11 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
   const getAssetIcon = (type: string) => {
     switch (type) {
       case 'website': return Globe;
-      case 'business_profile': return Star; // Use Star icon for 'business_profile'
+      case 'business_profile': return Star;
       case 'social_media': return Users;
       case 'directory': return Globe;
       case 'advertising': return Megaphone;
+      case 'review_platform': return FileText; // Using FileText for review platforms
       default: return Globe;
     }
   };
@@ -98,6 +103,16 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
         return <Badge variant="secondary">Low</Badge>;
       default:
         return <Badge variant="outline">-</Badge>;
+    }
+  };
+
+  // NEW: Function to get priority-based left border coloring
+  const getPriorityBorderColor = (priority: string) => {
+    switch (priority) {
+      case 'high': return 'border-l-destructive'; 
+      case 'medium': return 'border-l-warning'; 
+      case 'low': return 'border-l-primary'; 
+      default: return 'border-l-muted'; 
     }
   };
 
@@ -191,7 +206,9 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
         </div>
         
         <div className="text-center py-12">
+          <AlertTriangle className="h-12 w-12 text-destructive mx-auto mb-3" />
           <p className="text-destructive">Failed to load digital assets. Please try again.</p>
+          <p className="text-sm text-muted-foreground mt-2">{error.message}</p>
         </div>
       </div>
     );
@@ -251,12 +268,14 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="business_profile">Business Profile</SelectItem> {/* <--- Changed 'Google My Business' to 'Business Profile' */}
+                      <SelectItem value="business_profile">Business Profile</SelectItem>
                       <SelectItem value="website">Website</SelectItem>
                       <SelectItem value="social_media">Social Media</SelectItem>
                       <SelectItem value="directory">Directory</SelectItem>
                       <SelectItem value="review_platform">Review Platform</SelectItem>
                       <SelectItem value="advertising">Advertising</SelectItem>
+                      <SelectItem value="content_platform">Content Platform</SelectItem> {/* Added for consistency */}
+                      <SelectItem value="analytics_tool">Analytics Tool</SelectItem> {/* Added for consistency */}
                     </SelectContent>
                   </Select>
                 </div>
@@ -338,7 +357,7 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
         </div>
       </div>
 
-      {Object.entries(groupedAssets).map(([category, categoryAssets]: [string, any]) => (
+      {Object.entries(groupedAssets).map(([category, categoryAssets]: [string, DigitalAsset[]]) => (
         <Card key={category}>
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
@@ -360,14 +379,17 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {categoryAssets.map((asset: any) => {
+                {categoryAssets.map((asset: DigitalAsset) => {
                   const Icon = getAssetIcon(asset.asset_type);
                   
                   return (
                     <TableRow 
                       key={asset.id} 
-                      className="hover:bg-muted/50 cursor-pointer"
-                      onClick={() => onAssetClick?.(asset.id.toString())}
+                      className={cn(
+                        "hover:bg-muted/50 cursor-pointer border-l-4", // Added border-l-4 for priority color
+                        getPriorityBorderColor(asset.priority) // Apply priority color
+                      )}
+                      onClick={() => setSelectedAsset(asset)} // Open dialog on row click
                     >
                       <TableCell>
                         <Icon className="h-4 w-4 text-primary" />
@@ -415,8 +437,9 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
                             variant="ghost"
                             size="sm"
                             onClick={(e) => {
-                              e.stopPropagation();
-                              onAssetClick?.(asset.id.toString());
+                              e.stopPropagation(); // Prevent row click from triggering
+                              // onAssetClick?.(asset.id.toString()); // If needed for parent component
+                              setSelectedAsset(asset); // Re-open the dialog if already open
                             }}
                           >
                             <Eye className="h-3 w-3" />
@@ -443,6 +466,102 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
           </CardContent>
         </Card>
       ))}
+
+      {/* Asset Detail Dialog (Copied from Dashboard.tsx / VisualEcosystem.tsx) */}
+      <Dialog open={!!selectedAsset} onOpenChange={() => setSelectedAsset(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {selectedAsset && (
+                <>
+                  {React.createElement(getAssetIcon(selectedAsset.asset_type), { className: "h-5 w-5" })}
+                  {selectedAsset.asset_name}
+                </>
+              )}
+            </DialogTitle>
+          </DialogHeader>
+          
+          {selectedAsset && (
+            <div className="space-y-6">
+              {/* Status and Priority */}
+              <div className="flex items-center gap-4">
+                <Badge className={getStatusColor(selectedAsset.status)}>
+                  {selectedAsset.status}
+                </Badge>
+                <Badge variant={selectedAsset.priority === 'high' ? 'destructive' : 
+                               selectedAsset.priority === 'medium' ? 'default' : 'secondary'}>
+                  {selectedAsset.priority} priority
+                </Badge>
+              </div>
+
+              {/* URL */}
+              {selectedAsset.url && (
+                <div>
+                  <h4 className="font-semibold mb-2">URL</h4>
+                  <a href={selectedAsset.url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline break-all">
+                    {selectedAsset.url}
+                  </a>
+                </div>
+              )}
+
+              {/* Metrics */}
+              {selectedAsset.key_metrics_json && Object.keys(selectedAsset.key_metrics_json).length > 0 && (
+                <div>
+                  <h4 className="font-semibold mb-3">Performance Metrics</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    {Object.entries(selectedAsset.key_metrics_json).map(([key, value]) => (
+                      <div key={key} className="bg-muted/50 p-3 rounded-lg">
+                        <div className="text-sm text-muted-foreground">{key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</div> {/* Format key */}
+                        <div className="text-lg font-semibold">
+                          {typeof value === 'number' ? value.toLocaleString() : value}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* General Info (from DigitalAsset schema, can be expanded) */}
+              <div>
+                <h4 className="font-semibold mb-2">General Information</h4>
+                <div className="grid grid-cols-2 gap-2 text-sm text-muted-foreground">
+                  <div><strong>Type:</strong> {selectedAsset.asset_type.replace(/_/g, ' ').toUpperCase()}</div>
+                  <div><strong>Platform ID:</strong> {selectedAsset.platform_id_external || 'N/A'}</div>
+                  <div><strong>Created:</strong> {new Date(selectedAsset.created_at).toLocaleDateString()}</div>
+                  <div><strong>Last Updated:</strong> {new Date(selectedAsset.updated_at || selectedAsset.created_at).toLocaleDateString()}</div>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-2">
+                {selectedAsset.url && (
+                  <Button
+                    onClick={() => window.open(selectedAsset.url, '_blank')}
+                    className="flex items-center gap-2"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    Visit Asset
+                  </Button>
+                )}
+                {/* Re-using onAssetClick for consistency, though it's already triggered by row click */}
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setSelectedAsset(null); // Close current dialog
+                    onAssetClick?.(selectedAsset.id.toString()); // Trigger original click for parent logic
+                  }}
+                >
+                  <Eye className="h-4 w-4 mr-2" />
+                  View Details
+                </Button>
+                {/* Future: Edit Button / Delete Button */}
+                {/* <Button variant="secondary" size="sm"><Edit className="h-4 w-4" /></Button> */}
+                {/* <Button variant="destructive" size="sm"><Trash2 className="h-4 w-4" /></Button> */}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
