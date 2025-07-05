@@ -18,13 +18,13 @@ import {
   Clock,
   ChevronDown,
   ChevronRight,
-  Monitor, // Added Monitor icon for Website Platforms
-  FileText // Used for Content & Tools
+  Monitor, 
+  FileText 
 } from 'lucide-react'; 
 import { cn } from '@/lib/utils'; // Import cn
 
 interface VisualEcosystemProps {
-  data: DashboardData; // Still passed for clinic info (static for now, will be dynamic from Supabase 'clinic_info' table later)
+  data: DashboardData; 
   onAssetClick: (assetId: string) => void;
   onNavigate?: (tab: string, itemId?: string) => void;
 }
@@ -38,7 +38,7 @@ interface EcosystemNode {
   priority: string;
   x: number;
   y: number;
-  metrics?: Record<string, any>;
+  metrics?: Record<string, any>; // Changed from key_metrics_json to metrics for consistency with props
   url?: string;
   description?: string;
 }
@@ -56,10 +56,9 @@ export const VisualEcosystem = ({ data, onAssetClick, onNavigate }: VisualEcosys
       case 'website': return Globe;
       case 'business_profile': return Star; 
       case 'social_media': return Users;
-      case 'directory': return Globe; // Directories often use a generic web icon
-      case 'review_platform': return FileText; // Using FileText for review platforms, adjust as needed
+      case 'directory': return Globe; 
+      case 'review_platform': return FileText; 
       case 'advertising': return Megaphone;
-      // Future types for 'Content & Tools' category
       case 'content_platform': return FileText; 
       case 'analytics_tool': return Monitor; 
       default: return Globe;
@@ -100,7 +99,7 @@ export const VisualEcosystem = ({ data, onAssetClick, onNavigate }: VisualEcosys
 
   // Memoize ecosystemNodes creation to prevent unnecessary re-runs
   const ecosystemNodes = useMemo(() => {
-    const assetsToRender = digitalAssetsData || []; // Use live data
+    const assetsToRender = digitalAssetsData || []; 
     
     const containerWidth = 1000;
     const containerHeight = 800;
@@ -157,7 +156,6 @@ export const VisualEcosystem = ({ data, onAssetClick, onNavigate }: VisualEcosys
       },
       {
         name: 'Content & Tools', 
-        // Filter for specific asset types that might fall here, assuming future types
         assets: assetsToRender.filter(a => a.asset_type === 'content_platform' || a.asset_type === 'analytics_tool'),
         angle: 5 * Math.PI / 3,
         color: '#6366F1'
@@ -166,7 +164,6 @@ export const VisualEcosystem = ({ data, onAssetClick, onNavigate }: VisualEcosys
 
     categories.forEach((category, categoryIndex) => {
       // Only create category node if it has assets, ensuring no empty categories appear
-      // This also makes the map dynamically adapt to existing data.
       if (category.assets.length > 0) { 
         const categoryId = `category-${categoryIndex}`;
         const categoryX = centerX + Math.cos(category.angle) * categoryRadius;
@@ -188,7 +185,7 @@ export const VisualEcosystem = ({ data, onAssetClick, onNavigate }: VisualEcosys
         if (!collapsedCategories.has(categoryId) && category.assets.length > 0) {
           const assetsCount = category.assets.length;
           // Spread assets more evenly in a semicircle around the category node
-          const angleRange = Math.PI; // 180 degrees
+          const angleRange = Math.PI; 
           const angleStep = assetsCount > 1 ? angleRange / (assetsCount - 1) : 0;
           const startAngle = category.angle - angleRange / 2; 
           
@@ -206,7 +203,7 @@ export const VisualEcosystem = ({ data, onAssetClick, onNavigate }: VisualEcosys
               priority: asset.priority,
               x: assetX,
               y: assetY,
-              metrics: asset.key_metrics_json, 
+              metrics: asset.key_metrics_json, // Use key_metrics_json as per DB
               description: `${asset.asset_type ? asset.asset_type.replace('_', ' ') : 'Asset'} with ${asset.status} status`
             });
           });
@@ -315,7 +312,7 @@ export const VisualEcosystem = ({ data, onAssetClick, onNavigate }: VisualEcosys
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {Object.entries(groupedAssets).map(([type, assets]) => {
             const Icon = getAssetIcon(type);
-            const typeLabel = type ? type.replace('_', ' ').toUpperCase() : 'GENERAL';
+            const typeLabel = type ? type.type.replace('_', ' ').toUpperCase() : 'GENERAL'; // Corrected access to type name
             
             return (
               <Card key={type} className="hover:shadow-lg transition-all duration-300">
@@ -573,11 +570,24 @@ export const VisualEcosystem = ({ data, onAssetClick, onNavigate }: VisualEcosys
                         )}
                       </div>
 
-                      {/* Hover tooltip */}
+                      {/* Hover tooltip - Enhanced */}
                       {isHovered && node.type !== 'hub' && (
-                        <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 bg-black text-white text-xs rounded px-2 py-1 whitespace-nowrap z-20">
-                          {node.description}
-                          <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-black"></div>
+                        <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 bg-popover text-popover-foreground text-xs rounded-md px-3 py-2 shadow-lg whitespace-nowrap z-20 min-w-[150px]">
+                            <h5 className="font-semibold">{node.name}</h5>
+                            <p className="text-muted-foreground text-[0.65rem] truncate">{node.url || node.description}</p>
+                            <div className="mt-1 flex items-center justify-between text-[0.65rem] border-t border-border pt-1">
+                                <span className={cn("capitalize", getStatusColor(node.status))}>{node.status}</span>
+                                <span className="capitalize">{node.priority} priority</span>
+                            </div>
+                            {node.metrics && Object.keys(node.metrics).length > 0 && (
+                                <div className="mt-1 border-t border-border pt-1">
+                                    {Object.entries(node.metrics).slice(0, 2).map(([key, value]) => (
+                                        <p key={key} className="flex justify-between text-[0.6rem] capitalize">
+                                            <span>{key}:</span> <span className="font-medium">{typeof value === 'number' ? value.toLocaleString() : value}</span>
+                                        </p>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                       )}
                     </div>
