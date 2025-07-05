@@ -7,7 +7,7 @@ import { ExportMenu } from './ExportMenu';
 import { DashboardData, KPICard, Task } from '../types/dashboard'; // Import Task interface
 import { AlertTriangle, CheckCircle, Clock, Zap, Brain, FileText, TrendingUp, BarChart3, Loader2 } from 'lucide-react';
 import { useLatestKPIs, useTasks, useReviews, useDigitalAssets, useUpdateTask } from '../hooks/useSupabaseAPI'; // Added useUpdateTask
-import { useMemo, useState } from 'react'; // Added useState
+import { useMemo, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog'; // Added Dialog components
 import { Label } from './ui/label'; // Added Label for dialog content
 import { useToast } from '../hooks/use-toast'; // Import useToast
@@ -80,7 +80,7 @@ export const Dashboard = ({ data, onNavigate }: DashboardProps) => {
     const bpViewsChange = calculateChange(businessProfileViews?.metric_value || 0, 2500);
     
     const businessProfileActions = latestKPIs?.['Business Profile Actions'] || null;
-    const bpActionsValue = businessProfileActions ? bpActionsValue.metric_value.toLocaleString() : 'N/A'; // Corrected variable name here
+    const bpActionsValue = businessProfileActions ? bpActionsValue.metric_value.toLocaleString() : 'N/A';
     const bpActionsChange = calculateChange(businessProfileActions?.metric_value || 0, 300);
 
     const websiteSessions = latestKPIs?.['Website Sessions'] || latestKPIs?.['Website Traffic'] || null;
@@ -284,7 +284,8 @@ export const Dashboard = ({ data, onNavigate }: DashboardProps) => {
           <h1 className="text-3xl font-bold">Dashboard Overview</h1>
           <p className="text-muted-foreground">Get insights into your digital ecosystem</p>
           <div className="flex items-center gap-2 mt-2">
-            <div className="w-2 h-2 rounded-full bg-green-500"></div>
+            {/* Applied pulse-custom animation here */}
+            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse-custom"></div> 
             <span className="text-sm text-muted-foreground">Live data from Supabase</span>
           </div>
         </div>
