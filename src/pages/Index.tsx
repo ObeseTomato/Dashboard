@@ -1,4 +1,6 @@
-import { useState } from 'react';
+// File: src/pages/Index.tsx
+
+import { useState, useEffect } from 'react'; // Ensure useEffect is imported
 import { Header } from '../components/Header';
 import { Tabs, TabType } from '../components/Tabs';
 import { Dashboard } from '../components/Dashboard';
@@ -20,6 +22,7 @@ import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import { useNotifications } from '../contexts/NotificationContext';
 import { useRealTimeUpdates } from '../hooks/useRealTimeUpdates';
 import { produce } from 'immer';
+import { supabase } from '../lib/supabase'; // <--- ADD THIS IMPORT
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
@@ -27,6 +30,20 @@ const Index = () => {
   const [selectedAssetId, setSelectedAssetId] = useState<string | null>(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const { addNotification } = useNotifications();
+
+  // --- ADD THIS useEffect BLOCK ---
+  useEffect(() => {
+    const getUserId = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        console.log("Authenticated User ID:", user.id);
+      } else {
+        console.log("No user authenticated.");
+      }
+    };
+    getUserId();
+  }, []);
+  // --- END OF ADDITION ---
 
   // Real-time updates
   useRealTimeUpdates({
@@ -40,7 +57,7 @@ const Index = () => {
       }));
     },
     onTaskUpdate: (data) => {
-      console.log('Task update received:', data);
+      console.log('Task update received:', data); //
     },
     onMetricUpdate: (data) => {
       console.log('Metric update received:', data);
