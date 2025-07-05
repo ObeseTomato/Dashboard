@@ -228,7 +228,7 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
 
   const assets = assetsData || [];
   const groupedAssets = assets.reduce((groups: any, asset: any) => {
-    const category = asset.asset_type ? asset.asset_type.replace('_', ' ').toUpperCase() : 'GENERAL'; // Handle potential null/undefined asset_type
+    const category = asset.asset_type ? asset.asset_type.replace('_', ' ').toUpperCase() : 'GENERAL'; 
     if (!groups[category]) {
       groups[category] = [];
     }
@@ -392,7 +392,7 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
               </TableHeader>
               <TableBody>
                 {categoryAssets.map((asset: DigitalAsset) => {
-                  const Icon = getAssetIcon(asset.asset_type || ''); // Ensure type is string for icon
+                  const Icon = getAssetIcon(asset.asset_type || ''); 
                   
                   return (
                     <TableRow 
