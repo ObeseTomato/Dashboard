@@ -6,7 +6,7 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from './ui/dialog'; // ADDED DialogDescription
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from './ui/dialog'; // Ensure DialogDescription is imported
 import { Label } from './ui/label';
 import { 
   Table,
@@ -439,11 +439,7 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
                             {Object.entries(asset.key_metrics_json).slice(0, 2).map(([key, value]: [string, any]) => (
                               <div key={key} className="flex items-center space-x-2 text-xs">
                                 <span className="text-muted-foreground">{key}:</span>
-                                <span className="font-medium">
-                                  {typeof value === 'number' ? value.toLocaleString() : 
-                                   typeof value === 'object' ? 'Complex Data' : 
-                                   String(value)}
-                                </span>
+                                <span className="font-medium">{typeof value === 'number' ? value.toLocaleString() : value}</span>
                                 <TrendingUp className="h-3 w-3 text-success" />
                               </div>
                             ))}
@@ -499,7 +495,6 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
                 </>
               )}
             </DialogTitle>
-             {/* Adding a generic description to satisfy Radix UI warning */}
              <DialogDescription>
                 Detailed information for this {selectedAsset?.asset_type ? selectedAsset.asset_type.replace(/_/g, ' ') : 'digital'} asset.
             </DialogDescription>
@@ -536,7 +531,6 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
                     <h4 className="font-semibold mb-3">Performance Metrics (Summary)</h4>
                     <div className="grid grid-cols-2 gap-4">
                       {Object.entries(selectedAsset.key_metrics_json).map(([key, value]) => (
-                        // Display the first few key metrics as a general overview
                         <div key={key} className="bg-muted/50 p-3 rounded-lg">
                           <div className="text-sm text-muted-foreground">{key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</div> 
                           <div className="text-lg font-semibold">
@@ -730,12 +724,12 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
                         </div>
                       </div>
                     )}
-                  </>
+                  </div>
                 )}
 
                 {/* Website Specific Details */}
                 {selectedAsset.asset_type === 'website' && selectedAsset.key_metrics_json && (
-                  <div className="space-y-6">
+                  <div className="space-y-6 pt-6 md:pt-0 md:border-l md:pl-6 border-border">
                     <h3 className="text-xl font-bold">Website Performance Details</h3>
                     <div className="grid grid-cols-1 gap-4 text-sm text-muted-foreground">
                       {selectedAsset.key_metrics_json.sessions && <p><strong>Total Sessions:</strong> {selectedAsset.key_metrics_json.sessions.toLocaleString()}</p>}
