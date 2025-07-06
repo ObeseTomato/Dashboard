@@ -195,15 +195,21 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
     );
   }
 
-  const assets = assetsData || [];
-  const groupedAssets = assets.reduce((groups: any, asset: any) => {
-    const category = (asset.asset_type || 'general').replace('_', ' ').toUpperCase();
-    if (!groups[category]) {
-      groups[category] = [];
-    }
-    groups[category].push(asset);
-    return groups;
-  }, {});
+const assets = assetsData || [];
+// Define the type for the accumulator object
+type AssetGroups = { [key: string]: DigitalAsset[] };
+
+const groupedAssets: AssetGroups = assets.reduce((groups: AssetGroups, asset: DigitalAsset) => {
+  // Ensure asset_type is a string before calling string methods
+  const assetTypeString = asset.asset_type || 'general';
+  const category = assetTypeString.replace('_', ' ').toUpperCase();
+
+  if (!groups[category]) {
+    groups[category] = [];
+  }
+  groups[category].push(asset);
+  return groups;
+}, {}); // Initialize with the correct type
 
   return (
     <div className="p-6 space-y-6">
