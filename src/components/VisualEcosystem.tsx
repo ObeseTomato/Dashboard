@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 import { DashboardData } from '../types/dashboard'; 
 import { useDigitalAssets } from '../hooks/useSupabaseAPI'; 
-import { 
+import {
   Globe, 
   Star, 
   Users, 
@@ -23,7 +23,7 @@ import {
   Loader2,
   Eye // ADDED: Eye icon import
 } from 'lucide-react'; 
-import { cn } from '@/lib/utils'; 
+import { cn, safeGet, safeArray } from '@/lib/utils'; 
 
 interface VisualEcosystemProps {
   data: DashboardData; 
@@ -615,7 +615,7 @@ export const VisualEcosystem = ({ data, onAssetClick, onNavigate }: VisualEcosys
                             </div>
                             {node.metrics && Object.keys(node.metrics).length > 0 && (
                                 <div className="mt-1 border-t border-border pt-1">
-                                    {Object.entries(node.metrics).map(([key, value]) => (
+                                    {Object.entries(node.metrics || {}).map(([key, value]) => (
                                         <p key={key} className="flex justify-between text-[0.6rem] capitalize">
                                             <span>{key}:</span> <span className="font-medium">{typeof value === 'number' ? value.toLocaleString() : value}</span>
                                         </p>

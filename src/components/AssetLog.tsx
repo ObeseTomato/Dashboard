@@ -720,31 +720,31 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
                       </div>
                     )}
 
-                    {selectedAsset.key_metrics_json.qa?.length > 0 && Array.isArray(selectedAsset.key_metrics_json.qa) && (
+                    {safeArray(selectedAsset.key_metrics_json.qa).length > 0 && (
                       <div>
                         <h4 className="font-semibold mb-2 flex items-center gap-2"><MessageSquare className="h-4 w-4 text-indigo-500"/> Q&A</h4>
                         <div className="text-sm text-muted-foreground space-y-2">
-                          {selectedAsset.key_metrics_json.qa.map((item: any, idx: number) => (
+                          {safeArray(selectedAsset.key_metrics_json.qa).map((item: any, idx: number) => (
                             <div key={idx}>
-                              <p className="font-medium text-foreground">Q: {renderSafeValue(item.question)}</p>
-                              <p className="ml-4">A: {renderSafeValue(item.answer)}</p>
+                              <p className="font-medium text-foreground">Q: {renderSafeValue(safeGet(item, 'question', ''))}</p>
+                              <p className="ml-4">A: {renderSafeValue(safeGet(item, 'answer', ''))}</p>
                             </div>
                           ))}
                         </div>
                       </div>
                     )}
 
-                    {selectedAsset.key_metrics_json.posts?.length > 0 && Array.isArray(selectedAsset.key_metrics_json.posts) && (
+                    {safeArray(selectedAsset.key_metrics_json.posts).length > 0 && (
                       <div>
                         <h4 className="font-semibold mb-2 flex items-center gap-2"><FileText className="h-4 w-4 text-green-500"/> Posts</h4>
                         <div className="text-sm text-muted-foreground space-y-3">
-                          {selectedAsset.key_metrics_json.posts.map((post: any, idx: number) => (
+                          {safeArray(selectedAsset.key_metrics_json.posts).map((post: any, idx: number) => (
                             <div key={idx} className="border-b border-border pb-2 last:border-b-0">
-                              <p className="font-medium text-foreground">Update: {renderSafeValue(post.date)}</p>
-                              <p>{renderSafeValue(post.description)}</p>
-                              {post.button?.url && (
+                              <p className="font-medium text-foreground">Update: {renderSafeValue(safeGet(post, 'date', ''))}</p>
+                              <p>{renderSafeValue(safeGet(post, 'description', ''))}</p>
+                              {safeGet(post, 'button.url') && (
                                 <Button variant="link" size="sm" className="h-6 px-0 mt-1">
-                                  <a href={renderSafeValue(post.button.url)} target="_blank" rel="noopener noreferrer">{renderSafeValue(post.button.text, 'View Post')}</a>
+                                  <a href={renderSafeValue(safeGet(post, 'button.url', ''))} target="_blank" rel="noopener noreferrer">{renderSafeValue(safeGet(post, 'button.text', 'View Post'))}</a>
                                 </Button>
                               )}
                             </div>
