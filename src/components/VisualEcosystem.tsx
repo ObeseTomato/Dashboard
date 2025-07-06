@@ -1,16 +1,15 @@
-// obesetomato/dashboard/Dashboard-c1fdb5a0f45fa9f7c956a11b09f4801f23b45082/src/components/VisualEcosystem.tsx
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
-import { DashboardData } from '../types/dashboard'; 
-import { useDigitalAssets } from '../hooks/useSupabaseAPI'; 
+import { DashboardData } from '../types/dashboard';
+import { useDigitalAssets } from '../hooks/useSupabaseAPI'; // Import useDigitalAssets
 import {
-  Globe, 
-  Star, 
-  Users, 
+  Globe,
+  Star,
+  Users,
   Megaphone,
   ExternalLink,
   AlertTriangle,
@@ -18,15 +17,15 @@ import {
   Clock,
   ChevronDown,
   ChevronRight,
-  Monitor, 
+  Monitor,
   FileText,
-  Loader2,
-  Eye // ADDED: Eye icon import
-} from 'lucide-react'; 
-import { cn, safeGet, safeArray } from '@/lib/utils'; 
+  Loader2, // Added Loader2 for loading state
+  Phone, MapPin, MessageSquare // Added for expanded tooltip/modal details
+} from 'lucide-react';
+import { cn, safeGet, safeArray } from '@/lib/utils'; // NEW: Import safeGet and safeArray
 
 interface VisualEcosystemProps {
-  data: DashboardData; 
+  data: DashboardData;
   onAssetClick: (assetId: string) => void;
   onNavigate?: (tab: string, itemId?: string) => void;
 }
@@ -40,7 +39,7 @@ interface EcosystemNode {
   priority: string;
   x: number;
   y: number;
-  metrics?: Record<string, any>; 
+  metrics?: Record<string, any>;
   url?: string;
   description?: string;
 }
@@ -48,26 +47,29 @@ interface EcosystemNode {
 export const VisualEcosystem = ({ data, onAssetClick, onNavigate }: VisualEcosystemProps) => {
   const [selectedNode, setSelectedNode] = useState<EcosystemNode | null>(null);
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
-  const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(() => new Set()); 
+  const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(() => new Set());
 
+  // NEW: Fetch live digital assets data
   const { data: digitalAssetsData, isLoading, error } = useDigitalAssets();
 
   const getAssetIcon = (type: string) => {
-    switch (type) {
+    const assetTypeString = String(type || '');
+    switch (assetTypeString) {
       case 'website': return Globe;
-      case 'business_profile': return Star; 
+      case 'business_profile': return Star;
       case 'social_media': return Users;
-      case 'directory': return Globe; 
-      case 'review_platform': return FileText; 
+      case 'directory': return Globe;
+      case 'review_platform': return FileText;
       case 'advertising': return Megaphone;
-      case 'content_platform': return FileText; 
-      case 'analytics_tool': return Monitor; 
+      case 'content_platform': return FileText;
+      case 'analytics_tool': return Monitor;
       default: return Globe;
     }
   };
 
   const getStatusColor = (status: string) => {
-    switch (status) {
+    const statusString = String(status || '');
+    switch (statusString) {
       case 'active': return 'text-success border-success bg-success/10';
       case 'warning': return 'text-warning border-warning bg-warning/10';
       case 'critical': return 'text-destructive border-destructive bg-destructive/10';
@@ -76,17 +78,21 @@ export const VisualEcosystem = ({ data, onAssetClick, onNavigate }: VisualEcosys
     }
   };
 
+  // NEW: Function to get priority-based styling - re-used from AssetLog
   const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'high': return 'border-l-destructive'; 
-      case 'medium': return 'border-l-warning'; 
-      case 'low': return 'border-l-primary'; 
-      default: return 'border-l-muted'; 
+    const priorityString = String(priority || 'medium');
+    switch (priorityString) {
+      case 'high': return 'border-l-destructive';
+      case 'medium': return 'border-l-warning';
+      case 'low': return 'border-l-primary';
+      default: return 'border-l-muted';
     }
   };
 
+
   const getStatusIcon = (status: string) => {
-    switch (status) {
+    const statusString = String(status || '');
+    switch (statusString) {
       case 'active': return CheckCircle;
       case 'warning': return AlertTriangle;
       case 'critical': return AlertTriangle;
@@ -107,18 +113,19 @@ export const VisualEcosystem = ({ data, onAssetClick, onNavigate }: VisualEcosys
     });
   };
 
+  // Memoize ecosystemNodes creation to prevent unnecessary re-runs
   const ecosystemNodes = useMemo(() => {
-    const assetsToRender = digitalAssetsData || []; 
-    
+    const assetsToRender = digitalAssetsData || [];
+
     const containerWidth = 1000;
     const containerHeight = 800;
     const centerX = containerWidth / 2;
     const centerY = containerHeight / 2;
     const categoryRadius = 200;
     const assetRadius = 100;
-    
+
     const nodes: EcosystemNode[] = [];
-    
+
     // Central hub
     nodes.push({
       id: 'hub',
@@ -135,54 +142,54 @@ export const VisualEcosystem = ({ data, onAssetClick, onNavigate }: VisualEcosys
     const categories = [
       {
         name: 'Business Profiles',
-        assets: assetsToRender.filter(a => a.asset_type === 'business_profile'),
+        assets: safeArray(assetsToRender.filter(a => a.asset_type === 'business_profile')), // Use safeArray
         angle: 0,
         color: '#10B981'
       },
       {
-        name: 'Website Platforms', 
-        assets: assetsToRender.filter(a => a.asset_type === 'website'),
-        angle: Math.PI / 3, 
-        color: '#3B82F6' 
+        name: 'Website Platforms',
+        assets: safeArray(assetsToRender.filter(a => a.asset_type === 'website')), // Use safeArray
+        angle: Math.PI / 3,
+        color: '#3B82F6'
       },
       {
         name: 'Social Media',
-        assets: assetsToRender.filter(a => a.asset_type === 'social_media'),
-        angle: 2 * Math.PI / 3, 
+        assets: safeArray(assetsToRender.filter(a => a.asset_type === 'social_media')), // Use safeArray
+        angle: 2 * Math.PI / 3,
         color: '#8B5CF6'
       },
       {
         name: 'Directories & Reviews',
-        assets: assetsToRender.filter(a => a.asset_type === 'directory' || a.asset_type === 'review_platform'),
-        angle: Math.PI, 
+        assets: safeArray(assetsToRender.filter(a => a.asset_type === 'directory' || a.asset_type === 'review_platform')), // Use safeArray
+        angle: Math.PI,
         color: '#F59E0B'
       },
       {
         name: 'Advertising',
-        assets: assetsToRender.filter(a => a.asset_type === 'advertising'),
-        angle: 4 * Math.PI / 3, 
+        assets: safeArray(assetsToRender.filter(a => a.asset_type === 'advertising')), // Use safeArray
+        angle: 4 * Math.PI / 3,
         color: '#EF4444'
       },
       {
-        name: 'Content & Tools', 
-        assets: assetsToRender.filter(a => a.asset_type === 'content_platform' || a.asset_type === 'analytics_tool'),
+        name: 'Content & Tools',
+        assets: safeArray(assetsToRender.filter(a => a.asset_type === 'content_platform' || a.asset_type === 'analytics_tool')), // Use safeArray
         angle: 5 * Math.PI / 3,
         color: '#6366F1'
       }
     ];
 
     categories.forEach((category, categoryIndex) => {
-      if (category.assets.length > 0) { 
+      if (category.assets.length > 0) {
         const categoryId = `category-${categoryIndex}`;
         const categoryX = centerX + Math.cos(category.angle) * categoryRadius;
         const categoryY = centerY + Math.sin(category.angle) * categoryRadius;
-        
+
         nodes.push({
           id: categoryId,
           name: category.name,
           type: 'category',
           category: category.name,
-          status: 'active', 
+          status: 'active',
           priority: 'medium',
           x: categoryX,
           y: categoryY,
@@ -191,59 +198,59 @@ export const VisualEcosystem = ({ data, onAssetClick, onNavigate }: VisualEcosys
 
         if (!collapsedCategories.has(categoryId) && category.assets.length > 0) {
           const assetsCount = category.assets.length;
-          const angleRange = Math.PI; 
+          const angleRange = Math.PI;
           const angleStep = assetsCount > 1 ? angleRange / (assetsCount - 1) : 0;
-          const startAngle = category.angle - angleRange / 2; 
-          
+          const startAngle = category.angle - angleRange / 2;
+
           category.assets.forEach((asset, assetIndex) => {
             const assetAngle = startAngle + (assetIndex * angleStep);
             const assetX = categoryX + Math.cos(assetAngle) * assetRadius;
             const assetY = categoryY + Math.sin(assetAngle) * assetRadius;
-            
+
             nodes.push({
               id: asset.id.toString(),
-              name: asset.asset_name, 
-              type: asset.asset_type, 
+              name: renderSafeValue(asset.asset_name), // Use renderSafeValue
+              type: renderSafeValue(asset.asset_type), // Use renderSafeValue
               category: category.name,
-              status: asset.status,
-              priority: asset.priority,
+              status: renderSafeValue(asset.status), // Use renderSafeValue
+              priority: renderSafeValue(asset.priority), // Use renderSafeValue
               x: assetX,
               y: assetY,
-              metrics: asset.key_metrics_json, 
-              description: `${asset.asset_type ? asset.asset_type.replace('_', ' ') : 'Asset'} with ${asset.status} status`
+              metrics: asset.key_metrics_json,
+              description: `${asset.asset_type ? renderSafeValue(String(asset.asset_type).replace('_', ' ')) : 'Asset'} with ${renderSafeValue(asset.status)} status`
             });
           });
         }
       }
     });
     return nodes;
-  }, [digitalAssetsData, collapsedCategories, data.clinic.name]); 
+  }, [digitalAssetsData, collapsedCategories, data.clinic.name]);
 
   const hubNode = ecosystemNodes.find(n => n.id === 'hub');
 
   const handleNodeClick = (node: EcosystemNode) => {
     if (node.type === 'hub') {
-      return; 
+      return;
     }
-    
+
     if (node.type === 'category') {
       toggleCategory(node.id);
       return;
     }
-    
-    const asset = digitalAssetsData?.find(a => a.id.toString() === node.id); 
+
+    const asset = digitalAssetsData?.find(a => a.id.toString() === node.id);
     if (asset) {
       setSelectedNode({
         id: asset.id.toString(),
-        name: asset.asset_name,
-        type: asset.asset_type,
-        category: node.category, 
-        status: asset.status,
-        priority: asset.priority,
-        x: node.x, y: node.y, 
-        metrics: asset.key_metrics_json, 
-        url: asset.url || '',
-        description: `${asset.asset_type ? asset.asset_type.replace('_', ' ') : 'Asset'} with ${asset.status} status`
+        name: renderSafeValue(asset.asset_name),
+        type: renderSafeValue(asset.asset_type),
+        category: renderSafeValue(node.category), // Ensure category is string
+        status: renderSafeValue(asset.status),
+        priority: renderSafeValue(asset.priority),
+        x: node.x, y: node.y,
+        metrics: asset.key_metrics_json,
+        url: renderSafeValue(asset.url),
+        description: `${asset.asset_type ? renderSafeValue(String(asset.asset_type).replace('_', ' ')) : 'Asset'} with ${renderSafeValue(asset.status)} status`
       });
       onAssetClick(node.id);
     }
@@ -287,9 +294,9 @@ export const VisualEcosystem = ({ data, onAssetClick, onNavigate }: VisualEcosys
     );
   }
 
-  const assetsForOverview = digitalAssetsData || []; 
+  const assetsForOverview = digitalAssetsData || [];
   const groupedAssets = assetsForOverview.reduce((groups, asset) => {
-    const type = asset.asset_type || 'general'; 
+    const type = String(asset.asset_type || 'general'); // Ensure type is string
     if (!groups[type]) {
       groups[type] = [];
     }
@@ -328,8 +335,8 @@ export const VisualEcosystem = ({ data, onAssetClick, onNavigate }: VisualEcosys
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {Object.entries(groupedAssets).map(([type, assets]) => {
             const Icon = getAssetIcon(type);
-            const typeLabel = type ? type.replace('_', ' ').toUpperCase() : 'GENERAL'; 
-            
+            const typeLabel = String(type).replace(/_/g, ' ').toUpperCase(); // Ensure type is string
+
             return (
               <Card key={type} className="hover:shadow-lg transition-all duration-300">
                 <CardHeader className="pb-3">
@@ -340,62 +347,59 @@ export const VisualEcosystem = ({ data, onAssetClick, onNavigate }: VisualEcosys
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  {assets.map(asset => {
-                    const StatusIcon = getStatusIcon(asset.status);
-                    
+                  {safeArray(assets).map(asset => { // Use safeArray
+                    const StatusIcon = getStatusIcon(asset.status || '');
+
                     return (
-                      <div 
+                      <div
                         key={asset.id}
                         className={cn(
-                          "p-3 pr-4 rounded-lg border-l-4 cursor-pointer transition-all duration-200 hover:scale-105", 
-                          getStatusColor(asset.status), 
-                          getPriorityColor(asset.priority) 
+                          "p-3 pr-4 rounded-lg border-l-4 cursor-pointer transition-all duration-200 hover:scale-105",
+                          getStatusColor(asset.status || ''), // Ensure status is string
+                          getPriorityColor(asset.priority || 'medium') // Ensure priority is string
                         )}
                         onClick={() => {
-                          setSelectedNode({
+                          setSelectedNode({ // Construct EcosystemNode from fetched asset
                             id: asset.id.toString(),
-                            name: asset.asset_name,
-                            type: asset.asset_type,
-                            category: typeLabel, 
-                            status: asset.status,
-                            priority: asset.priority,
-                            x: 0, y: 0, 
-                            metrics: asset.key_metrics_json, 
-                            url: asset.url || '',
-                            description: `${asset.asset_type ? asset.asset_type.replace('_', ' ') : 'Asset'} with ${asset.status} status`
+                            name: renderSafeValue(asset.asset_name),
+                            type: renderSafeValue(asset.asset_type),
+                            category: typeLabel,
+                            status: renderSafeValue(asset.status),
+                            priority: renderSafeValue(asset.priority),
+                            x: 0, y: 0, // Placeholder coords
+                            metrics: asset.key_metrics_json,
+                            url: renderSafeValue(asset.url),
+                            description: `${asset.asset_type ? renderSafeValue(String(asset.asset_type).replace('_', ' ')) : 'Asset'} with ${renderSafeValue(asset.status)} status`
                           });
                           onAssetClick(asset.id.toString());
                         }}
                       >
                         <div className="flex items-center justify-between mb-2">
-                          <h4 className="font-medium text-sm">{asset.asset_name}</h4>
+                          <h4 className="font-medium text-sm">{renderSafeValue(asset.asset_name)}</h4>
                           <StatusIcon className="h-4 w-4" />
                         </div>
-                        
+
                         <div className="flex items-center justify-between text-xs">
                           <span className="opacity-75">
                             Updated: {asset.last_updated ? new Date(asset.last_updated).toLocaleDateString() : 'N/A'}
                           </span>
-                          <Badge 
-                            variant={asset.priority === 'high' ? 'destructive' : 
-                                     asset.priority === 'medium' ? 'default' : 'secondary'}
+                          <Badge
+                            variant={String(asset.priority || 'medium') === 'high' ? 'destructive' :
+                                     String(asset.priority || 'medium') === 'medium' ? 'default' : 'secondary'}
                             className="text-xs"
                           >
                             {asset.priority}
                           </Badge>
                         </div>
-                        
-                        {asset.key_metrics_json && Object.keys(asset.key_metrics_json).length > 0 ? (
+
+                        {asset.key_metrics_json && typeof asset.key_metrics_json === 'object' && Object.keys(asset.key_metrics_json).length > 0 ? (
                           <div className="mt-2 pt-2 border-t border-current/20">
                             <div className="grid grid-cols-2 gap-1 text-xs">
-                              {Object.entries(asset.key_metrics_json).map(([key, value]) => (
+                              {/* Show first 2 common metrics */}
+                              {Object.entries(asset.key_metrics_json).filter(([key, value]) => typeof value !== 'object' && !Array.isArray(value)).slice(0, 2).map(([key, value]) => (
                                 <div key={key} className="flex justify-between">
                                   <span className="opacity-75">{key}:</span>
-                                  <span className="font-medium">
-                                    {typeof value === 'number' ? value.toLocaleString() : 
-                                     typeof value === 'object' ? 'Complex Data' : 
-                                     String(value)}
-                                  </span>
+                                  <span className="font-medium">{renderSafeValue(value)}</span>
                                 </div>
                               ))}
                             </div>
@@ -403,15 +407,15 @@ export const VisualEcosystem = ({ data, onAssetClick, onNavigate }: VisualEcosys
                         ) : (
                           <span className="text-muted-foreground text-sm">No metrics</span>
                         )}
-                        
+
                         {asset.url && (
                           <Button
                             variant="ghost"
                             size="sm"
                             className="w-full mt-2 h-6 text-xs"
                             onClick={(e) => {
-                              e.stopPropagation(); 
-                              window.open(asset.url, '_blank');
+                              e.stopPropagation();
+                              window.open(renderSafeValue(asset.url), '_blank');
                             }}
                           >
                             <ExternalLink className="h-3 w-3 mr-1" />
@@ -503,12 +507,12 @@ export const VisualEcosystem = ({ data, onAssetClick, onNavigate }: VisualEcosys
                   .filter(node => node.type !== 'hub' && node.type !== 'category')
                   .map(assetNode => {
                     // Find the category this asset belongs to
-                    const categoryNode = ecosystemNodes.find(n => 
+                    const categoryNode = ecosystemNodes.find(n =>
                       n.type === 'category' && n.name === assetNode.category
                     );
-                    
+
                     if (!categoryNode) return null;
-                    
+
                     return (
                       <line
                         key={`asset-line-${assetNode.id}`}
@@ -528,13 +532,11 @@ export const VisualEcosystem = ({ data, onAssetClick, onNavigate }: VisualEcosys
               {/* Nodes */}
               <div className="absolute inset-0 w-[1000px] h-[800px] mx-auto">
                 {ecosystemNodes.map(node => {
-                  const Icon = node.type === 'hub' ? Star : 
-                             node.type === 'category' ? Globe : 
-                             getAssetIcon(node.type);
-                  const StatusIcon = getStatusIcon(node.status);
+                  const Icon = getAssetIcon(node.type || '');
+                  const StatusIcon = getStatusIcon(node.status || '');
                   const isHovered = hoveredNode === node.id;
                   const isSelected = selectedNode?.id === node.id;
-                  const isCollapsed = node.type === 'category' && collapsedCategories.has(node.id); 
+                  const isCollapsed = node.type === 'category' && collapsedCategories.has(node.id);
 
                   return (
                     <div
@@ -555,17 +557,17 @@ export const VisualEcosystem = ({ data, onAssetClick, onNavigate }: VisualEcosys
                       <div
                         className={cn(
                           `relative flex items-center justify-center rounded-full border-2 shadow-lg`,
-                          node.type === 'hub' 
-                            ? 'w-20 h-20 bg-gradient-to-br from-primary to-primary-glow border-primary text-white' 
+                          node.type === 'hub'
+                            ? 'w-20 h-20 bg-gradient-to-br from-primary to-primary-glow border-primary text-white'
                             : node.type === 'category'
                             ? 'w-16 h-16 bg-gradient-to-br from-slate-200 to-slate-300 border-slate-400 text-slate-700'
-                            : `w-12 h-12 ${getStatusColor(node.status)} border-2`
+                            : `w-12 h-12 ${getStatusColor(node.status || '')} border-2` // Ensure status is string
                         )}
                       >
                         <Icon className={cn(
                           node.type === 'hub' ? 'h-8 w-8' : node.type === 'category' ? 'h-6 w-6' : 'h-5 w-5'
                         )} />
-                        
+
                         {/* Collapse/Expand indicator for categories */}
                         {node.type === 'category' && (
                           <div className="absolute -bottom-1 -right-1">
@@ -576,7 +578,7 @@ export const VisualEcosystem = ({ data, onAssetClick, onNavigate }: VisualEcosys
                             )}
                           </div>
                         )}
-                        
+
                         {/* Status indicator for assets */}
                         {node.type !== 'hub' && node.type !== 'category' && (
                           <div className="absolute -top-1 -right-1">
@@ -587,14 +589,14 @@ export const VisualEcosystem = ({ data, onAssetClick, onNavigate }: VisualEcosys
 
                       {/* Node label */}
                       <div className={cn(
-                        `absolute top-full mt-2 left-1/2 transform -translate-x-1/2 
+                        `absolute top-full mt-2 left-1/2 transform -translate-x-1/2
                         text-center text-xs font-medium whitespace-nowrap`,
                         node.type === 'hub' ? 'text-primary font-bold' : 'text-slate-700 dark:text-slate-300'
                       )}>
-                        {node.name}
+                        {renderSafeValue(node.name)}
                         {node.type !== 'hub' && node.type !== 'category' && (
                           <div className="text-xs text-muted-foreground">
-                            {node.priority} priority
+                            {renderSafeValue(node.priority)} priority
                           </div>
                         )}
                         {node.type === 'category' && (
@@ -607,18 +609,20 @@ export const VisualEcosystem = ({ data, onAssetClick, onNavigate }: VisualEcosys
                       {/* Hover tooltip - Enhanced */}
                       {isHovered && node.type !== 'hub' && (
                         <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 bg-popover text-popover-foreground text-xs rounded-md px-3 py-2 shadow-lg whitespace-nowrap z-20 min-w-[150px]">
-                            <h5 className="font-semibold">{node.name}</h5>
-                            <p className="text-muted-foreground text-[0.65rem] truncate">{node.url || node.description}</p>
+                            <h5 className="font-semibold">{renderSafeValue(node.name)}</h5>
+                            <p className="text-muted-foreground text-[0.65rem] truncate">{renderSafeValue(node.url || node.description)}</p>
                             <div className="mt-1 flex items-center justify-between text-[0.65rem] border-t border-border pt-1">
-                                <span className={cn("capitalize", getStatusColor(node.status))}>{node.status}</span>
-                                <span className="capitalize">{node.priority} priority</span>
+                                <span className={cn("capitalize", getStatusColor(node.status || ''))}>{renderSafeValue(node.status)}</span>
+                                <span className="capitalize">{renderSafeValue(node.priority)} priority</span>
                             </div>
-                            {node.metrics && Object.keys(node.metrics).length > 0 && (
+                            {node.metrics && typeof node.metrics === 'object' && Object.keys(node.metrics).length > 0 && (
                                 <div className="mt-1 border-t border-border pt-1">
-                                    {Object.entries(node.metrics || {}).map(([key, value]) => (
-                                        <p key={key} className="flex justify-between text-[0.6rem] capitalize">
-                                            <span>{key}:</span> <span className="font-medium">{typeof value === 'number' ? value.toLocaleString() : value}</span>
-                                        </p>
+                                    {Object.entries(node.metrics).slice(0, 2).map(([key, value]) => (
+                                        typeof value !== 'object' && !Array.isArray(value) ? ( // Filter out objects/arrays
+                                            <p key={key} className="flex justify-between text-[0.6rem] capitalize">
+                                                <span>{renderSafeValue(key)}:</span> <span className="font-medium">{renderSafeValue(value)}</span>
+                                            </p>
+                                        ) : null
                                     ))}
                                 </div>
                             )}
@@ -696,22 +700,22 @@ export const VisualEcosystem = ({ data, onAssetClick, onNavigate }: VisualEcosys
             <DialogTitle className="flex items-center gap-2">
               {selectedNode && (
                 <>
-                  {React.createElement(getAssetIcon(selectedNode.type), { className: "h-5 w-5" })}
-                  {selectedNode.name}
+                  {React.createElement(getAssetIcon(selectedNode.type || ''), { className: "h-5 w-5" })}
+                  {renderSafeValue(selectedNode.name)}
                 </>
               )}
             </DialogTitle>
           </DialogHeader>
-          
+
           {selectedNode && (
             <div className="space-y-6">
               {/* Status and Priority */}
               <div className="flex items-center gap-4">
-                <Badge className={getStatusColor(selectedNode.status)}>
+                <Badge className={getStatusColor(selectedNode.status || '')}>
                   {selectedNode.status}
                 </Badge>
-                <Badge variant={selectedNode.priority === 'high' ? 'destructive' : 
-                               selectedNode.priority === 'medium' ? 'default' : 'secondary'}>
+                <Badge variant={String(selectedNode.priority || 'medium') === 'high' ? 'destructive' :
+                               String(selectedNode.priority || 'medium') === 'medium' ? 'default' : 'secondary'}>
                   {selectedNode.priority} priority
                 </Badge>
               </div>
@@ -719,21 +723,19 @@ export const VisualEcosystem = ({ data, onAssetClick, onNavigate }: VisualEcosys
               {/* Description */}
               <div>
                 <h4 className="font-semibold mb-2">Description</h4>
-                <p className="text-muted-foreground">{selectedNode.description}</p>
+                <p className="text-muted-foreground">{renderSafeValue(selectedNode.description)}</p>
               </div>
 
               {/* Metrics */}
-              {selectedNode.metrics && Object.keys(selectedNode.metrics).length > 0 && (
+              {selectedNode.metrics && typeof selectedNode.metrics === 'object' && Object.keys(selectedNode.metrics).length > 0 && (
                 <div>
                   <h4 className="font-semibold mb-3">Performance Metrics</h4>
                   <div className="grid grid-cols-2 gap-4">
-                    {Object.entries(selectedNode.metrics).map(([key, value]) => (
+                    {Object.entries(selectedNode.metrics).filter(([key, value]) => typeof value !== 'object' && !Array.isArray(value)).map(([key, value]) => (
                       <div key={key} className="bg-muted/50 p-3 rounded-lg">
-                        <div className="text-sm text-muted-foreground">{key}</div>
+                        <div className="text-sm text-muted-foreground">{renderSafeValue(key)}</div>
                         <div className="text-lg font-semibold">
-                          {typeof value === 'number' ? value.toLocaleString() : 
-                           typeof value === 'object' ? 'Complex Data' : 
-                           String(value)}
+                          {renderSafeValue(value)}
                         </div>
                       </div>
                     ))}
@@ -745,7 +747,7 @@ export const VisualEcosystem = ({ data, onAssetClick, onNavigate }: VisualEcosys
               <div className="flex gap-2">
                 {selectedNode.url && (
                   <Button
-                    onClick={() => window.open(selectedNode.url, '_blank')}
+                    onClick={() => window.open(renderSafeValue(selectedNode.url), '_blank')}
                     className="flex items-center gap-2"
                   >
                     <ExternalLink className="h-4 w-4" />
