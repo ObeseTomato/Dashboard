@@ -35,7 +35,8 @@ import {
   MapPin,
   Clock,
   MessageSquare,
-  FileText
+  FileText,
+  Monitor
 } from 'lucide-react';
 import { useDigitalAssets, useCreateDigitalAsset, useUpdateDigitalAsset } from '../hooks/useSupabaseAPI';
 import { useToast } from '../hooks/use-toast';
@@ -55,7 +56,7 @@ interface NewDigitalAsset {
   url: string;
 }
 
-// renderSafeValue utility function to prevent rendering errors from objects/null/undefined
+// Safe value renderer to prevent React object rendering errors
 const renderSafeValue = (value: any, fallback: string = 'N/A'): string => {
   if (value === null || value === undefined) return fallback;
   if (typeof value === 'string') return value;
@@ -64,7 +65,11 @@ const renderSafeValue = (value: any, fallback: string = 'N/A'): string => {
   if (Array.isArray(value)) {
     const stringifiedArray = value.map(item => {
       if (typeof item === 'object' && item !== null) {
-        try { return JSON.stringify(item); } catch { return fallback; }
+        try { 
+          return JSON.stringify(item); 
+        } catch { 
+          return fallback; 
+        }
       }
       return String(item);
     }).join(', ');
@@ -80,6 +85,21 @@ const renderSafeValue = (value: any, fallback: string = 'N/A'): string => {
   return String(value);
 };
 
+// Safe object access helper
+const safeGet = (obj: any, path: string, defaultValue: any = null) => {
+  try {
+    return path.split('.').reduce((current, key) => {
+      return current && typeof current === 'object' ? current[key] : defaultValue;
+    }, obj);
+  } catch {
+    return defaultValue;
+  }
+};
+
+// Safe array check helper
+const safeArray = (value: any): any[] => {
+  return Array.isArray(value) ? value : [];
+};
 
 export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -99,7 +119,6 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
   const updateAssetMutation = useUpdateDigitalAsset();
 
   const getAssetIcon = (type: string) => {
-    // Ensure type is treated as string for switch case
     const assetTypeString = String(type || '');
     switch (assetTypeString) {
       case 'website': return Globe;
@@ -514,7 +533,7 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
         </Card>
       ))}
 
-      {/* Asset Detail Dialog (Now with expanded content for Business Profiles and other types) */}
+      {/* Asset Detail Dialog */}
       <Dialog open={!!selectedAsset} onOpenChange={() => setSelectedAsset(null)}>
         <DialogContent className="max-w-3xl overflow-y-auto max-h-[90vh]">
           <DialogHeader>
@@ -537,9 +556,7 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
               <div className="space-y-6">
                 {/* Status and Priority */}
                 <div className="flex items-center gap-4">
-                  <Badge className={getStatusBadge(selectedAsset.status || '')}>
-                    {selectedAsset.status}
-                  </Badge>
+                  {getStatusBadge(selectedAsset.status || '')}
                   <Badge variant={selectedAsset.priority === 'high' ? 'destructive' :
                                  selectedAsset.priority === 'medium' ? 'default' : 'secondary'}>
                     {selectedAsset.priority} priority
@@ -592,129 +609,129 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
                   <>
                     <h3 className="text-xl font-bold">Business Profile Details</h3>
 
-                    {selectedAsset.key_metrics_json.businessInformation && typeof selectedAsset.key_metrics_json.businessInformation === 'object' && (
+                    {safeGet(selectedAsset.key_metrics_json, 'businessInformation') && typeof safeGet(selectedAsset.key_metrics_json, 'businessInformation') === 'object' && (
                       <div>
                         <h4 className="font-semibold mb-2 flex items-center gap-2"><Star className="h-4 w-4 text-yellow-500"/> Business Information</h4>
                         <div className="text-sm text-muted-foreground space-y-1">
-                          {selectedAsset.key_metrics_json.businessInformation.businessName && (
-                            <p><strong>Name:</strong> {renderSafeValue(selectedAsset.key_metrics_json.businessInformation.businessName)}</p>
+                          {safeGet(selectedAsset.key_metrics_json, 'businessInformation.businessName') && (
+                            <p><strong>Name:</strong> {renderSafeValue(safeGet(selectedAsset.key_metrics_json, 'businessInformation.businessName'))}</p>
                           )}
-                          {selectedAsset.key_metrics_json.businessInformation.primaryCategory && (
-                            <p><strong>Primary Category:</strong> {renderSafeValue(selectedAsset.key_metrics_json.businessInformation.primaryCategory)}</p>
+                          {safeGet(selectedAsset.key_metrics_json, 'businessInformation.primaryCategory') && (
+                            <p><strong>Primary Category:</strong> {renderSafeValue(safeGet(selectedAsset.key_metrics_json, 'businessInformation.primaryCategory'))}</p>
                           )}
-                          {selectedAsset.key_metrics_json.businessInformation.additionalCategories?.length > 0 && Array.isArray(selectedAsset.key_metrics_json.businessInformation.additionalCategories) && (
-                            <p><strong>Additional Categories:</strong> {selectedAsset.key_metrics_json.businessInformation.additionalCategories.map(cat => renderSafeValue(cat)).join(', ')}</p>
+                          {safeArray(safeGet(selectedAsset.key_metrics_json, 'businessInformation.additionalCategories')).length > 0 && (
+                            <p><strong>Additional Categories:</strong> {safeArray(safeGet(selectedAsset.key_metrics_json, 'businessInformation.additionalCategories')).map(cat => renderSafeValue(cat)).join(', ')}</p>
                           )}
-                          {selectedAsset.key_metrics_json.description && (
-                            <p><strong>Description:</strong> {renderSafeValue(selectedAsset.key_metrics_json.description)}</p>
+                          {safeGet(selectedAsset.key_metrics_json, 'description') && (
+                            <p><strong>Description:</strong> {renderSafeValue(safeGet(selectedAsset.key_metrics_json, 'description'))}</p>
                           )}
-                            {selectedAsset.key_metrics_json.businessInformation.openingDate && (
-                            <p><strong>Opening Date:</strong> {new Date(renderSafeValue(selectedAsset.key_metrics_json.businessInformation.openingDate)).toLocaleDateString()}</p>
+                          {safeGet(selectedAsset.key_metrics_json, 'businessInformation.openingDate') && (
+                            <p><strong>Opening Date:</strong> {new Date(renderSafeValue(safeGet(selectedAsset.key_metrics_json, 'businessInformation.openingDate'))).toLocaleDateString()}</p>
                           )}
                         </div>
                       </div>
                     )}
 
-                    {selectedAsset.key_metrics_json.contactSocials && typeof selectedAsset.key_metrics_json.contactSocials === 'object' && (
+                    {safeGet(selectedAsset.key_metrics_json, 'contactSocials') && typeof safeGet(selectedAsset.key_metrics_json, 'contactSocials') === 'object' && (
                       <div>
                         <h4 className="font-semibold mb-2 flex items-center gap-2"><Phone className="h-4 w-4 text-blue-500"/> Contact & Socials</h4>
                         <div className="text-sm text-muted-foreground space-y-1">
-                          {selectedAsset.key_metrics_json.contactSocials.phoneNumber && (
-                            <p><strong>Phone:</strong> {renderSafeValue(selectedAsset.key_metrics_json.contactSocials.phoneNumber)}</p>
+                          {safeGet(selectedAsset.key_metrics_json, 'contactSocials.phoneNumber') && (
+                            <p><strong>Phone:</strong> {renderSafeValue(safeGet(selectedAsset.key_metrics_json, 'contactSocials.phoneNumber'))}</p>
                           )}
-                          {selectedAsset.key_metrics_json.contactSocials.website && (
-                            <p><strong>Website:</strong> <a href={renderSafeValue(selectedAsset.key_metrics_json.contactSocials.website)} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">{renderSafeValue(selectedAsset.key_metrics_json.contactSocials.website)}</a></p>
+                          {safeGet(selectedAsset.key_metrics_json, 'contactSocials.website') && (
+                            <p><strong>Website:</strong> <a href={renderSafeValue(safeGet(selectedAsset.key_metrics_json, 'contactSocials.website'))} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">{renderSafeValue(safeGet(selectedAsset.key_metrics_json, 'contactSocials.website'))}</a></p>
                           )}
-                          {selectedAsset.key_metrics_json.contactSocials.chat && (
-                            <p><strong>Chat:</strong> {renderSafeValue(selectedAsset.key_metrics_json.contactSocials.chat)}</p>
+                          {safeGet(selectedAsset.key_metrics_json, 'contactSocials.chat') && (
+                            <p><strong>Chat:</strong> {renderSafeValue(safeGet(selectedAsset.key_metrics_json, 'contactSocials.chat'))}</p>
                           )}
-                          {selectedAsset.key_metrics_json.contactSocials.facebook && (
-                            <p><strong>Facebook:</strong> <a href={renderSafeValue(selectedAsset.key_metrics_json.contactSocials.facebook)} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">{renderSafeValue(selectedAsset.key_metrics_json.contactSocials.facebook)}</a></p>
+                          {safeGet(selectedAsset.key_metrics_json, 'contactSocials.facebook') && (
+                            <p><strong>Facebook:</strong> <a href={renderSafeValue(safeGet(selectedAsset.key_metrics_json, 'contactSocials.facebook'))} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">{renderSafeValue(safeGet(selectedAsset.key_metrics_json, 'contactSocials.facebook'))}</a></p>
                           )}
                         </div>
                       </div>
                     )}
 
-                    {selectedAsset.key_metrics_json.locationAreas && typeof selectedAsset.key_metrics_json.locationAreas === 'object' && (
+                    {safeGet(selectedAsset.key_metrics_json, 'locationAreas') && typeof safeGet(selectedAsset.key_metrics_json, 'locationAreas') === 'object' && (
                       <div>
                         <h4 className="font-semibold mb-2 flex items-center gap-2"><MapPin className="h-4 w-4 text-red-500"/> Location and Areas</h4>
                         <div className="text-sm text-muted-foreground space-y-1">
-                          {selectedAsset.key_metrics_json.locationAreas.businessLocation && (
-                            <p><strong>Location:</strong> {renderSafeValue(selectedAsset.key_metrics_json.locationAreas.businessLocation)}</p>
+                          {safeGet(selectedAsset.key_metrics_json, 'locationAreas.businessLocation') && (
+                            <p><strong>Location:</strong> {renderSafeValue(safeGet(selectedAsset.key_metrics_json, 'locationAreas.businessLocation'))}</p>
                           )}
-                          {selectedAsset.key_metrics_json.locationAreas.serviceAreas?.length > 0 && Array.isArray(selectedAsset.key_metrics_json.locationAreas.serviceAreas) && (
-                            <p><strong>Service Areas:</strong> {selectedAsset.key_metrics_json.locationAreas.serviceAreas.map(area => renderSafeValue(area)).join(', ')}</p>
+                          {safeArray(safeGet(selectedAsset.key_metrics_json, 'locationAreas.serviceAreas')).length > 0 && (
+                            <p><strong>Service Areas:</strong> {safeArray(safeGet(selectedAsset.key_metrics_json, 'locationAreas.serviceAreas')).map(area => renderSafeValue(area)).join(', ')}</p>
                           )}
                         </div>
                       </div>
                     )}
 
-                    {selectedAsset.key_metrics_json.businessHours && typeof selectedAsset.key_metrics_json.businessHours === 'object' && (
+                    {safeGet(selectedAsset.key_metrics_json, 'businessHours') && typeof safeGet(selectedAsset.key_metrics_json, 'businessHours') === 'object' && (
                       <div>
                         <h4 className="font-semibold mb-2 flex items-center gap-2"><Clock className="h-4 w-4 text-gray-500"/> Business Hours</h4>
                         <div className="text-sm text-muted-foreground space-y-1">
-                          {Object.entries(selectedAsset.key_metrics_json.businessHours).map(([day, hours]) => (
+                          {Object.entries(safeGet(selectedAsset.key_metrics_json, 'businessHours') || {}).map(([day, hours]) => (
                             <p key={day}><strong>{day.charAt(0).toUpperCase() + day.slice(1)}:</strong> {renderSafeValue(hours)}</p>
                           ))}
                         </div>
-                        {selectedAsset.key_metrics_json.specialHours && (
-                           <p className="mt-2"><strong>Special Hours:</strong> {renderSafeValue(selectedAsset.key_metrics_json.specialHours)}</p>
+                        {safeGet(selectedAsset.key_metrics_json, 'specialHours') && (
+                           <p className="mt-2"><strong>Special Hours:</strong> {renderSafeValue(safeGet(selectedAsset.key_metrics_json, 'specialHours'))}</p>
                         )}
                       </div>
                     )}
 
-                    {selectedAsset.key_metrics_json.attributesAccessibility && typeof selectedAsset.key_metrics_json.attributesAccessibility === 'object' && (
+                    {safeGet(selectedAsset.key_metrics_json, 'attributesAccessibility') && typeof safeGet(selectedAsset.key_metrics_json, 'attributesAccessibility') === 'object' && (
                       <div>
                         <h4 className="font-semibold mb-2 flex items-center gap-2"><CheckCircle className="h-4 w-4 text-purple-500"/> Attributes & Accessibility</h4>
                         <div className="text-sm text-muted-foreground space-y-1">
-                          {selectedAsset.key_metrics_json.attributesAccessibility.fromTheBusiness?.length > 0 && Array.isArray(selectedAsset.key_metrics_json.attributesAccessibility.fromTheBusiness) && (
-                            <p><strong>From the business:</strong> {selectedAsset.key_metrics_json.attributesAccessibility.fromTheBusiness.map(attr => renderSafeValue(attr)).join(', ')}</p>
+                          {safeArray(safeGet(selectedAsset.key_metrics_json, 'attributesAccessibility.fromTheBusiness')).length > 0 && (
+                            <p><strong>From the business:</strong> {safeArray(safeGet(selectedAsset.key_metrics_json, 'attributesAccessibility.fromTheBusiness')).map(attr => renderSafeValue(attr)).join(', ')}</p>
                           )}
-                          {selectedAsset.key_metrics_json.attributesAccessibility.accessibility?.length > 0 && Array.isArray(selectedAsset.key_metrics_json.attributesAccessibility.accessibility) && (
-                            <p><strong>Accessibility:</strong> {selectedAsset.key_metrics_json.attributesAccessibility.accessibility.map(attr => renderSafeValue(attr)).join(', ')}</p>
+                          {safeArray(safeGet(selectedAsset.key_metrics_json, 'attributesAccessibility.accessibility')).length > 0 && (
+                            <p><strong>Accessibility:</strong> {safeArray(safeGet(selectedAsset.key_metrics_json, 'attributesAccessibility.accessibility')).map(attr => renderSafeValue(attr)).join(', ')}</p>
                           )}
-                          {selectedAsset.key_metrics_json.attributesAccessibility.amenities?.length > 0 && Array.isArray(selectedAsset.key_metrics_json.attributesAccessibility.amenities) && (
-                            <p><strong>Amenities:</strong> {selectedAsset.key_metrics_json.attributesAccessibility.amenities.map(attr => renderSafeValue(attr)).join(', ')}</p>
+                          {safeArray(safeGet(selectedAsset.key_metrics_json, 'attributesAccessibility.amenities')).length > 0 && (
+                            <p><strong>Amenities:</strong> {safeArray(safeGet(selectedAsset.key_metrics_json, 'attributesAccessibility.amenities')).map(attr => renderSafeValue(attr)).join(', ')}</p>
                           )}
-                          {selectedAsset.key_metrics_json.attributesAccessibility.crowd?.length > 0 && Array.isArray(selectedAsset.key_metrics_json.attributesAccessibility.crowd) && (
-                            <p><strong>Crowd:</strong> {selectedAsset.key_metrics_json.attributesAccessibility.crowd.map(attr => renderSafeValue(attr)).join(', ')}</p>
+                          {safeArray(safeGet(selectedAsset.key_metrics_json, 'attributesAccessibility.crowd')).length > 0 && (
+                            <p><strong>Crowd:</strong> {safeArray(safeGet(selectedAsset.key_metrics_json, 'attributesAccessibility.crowd')).map(attr => renderSafeValue(attr)).join(', ')}</p>
                           )}
-                          {selectedAsset.key_metrics_json.attributesAccessibility.parking?.length > 0 && Array.isArray(selectedAsset.key_metrics_json.attributesAccessibility.parking) && (
-                            <p><strong>Parking:</strong> {selectedAsset.key_metrics_json.attributesAccessibility.parking.map(attr => renderSafeValue(attr)).join(', ')}</p>
+                          {safeArray(safeGet(selectedAsset.key_metrics_json, 'attributesAccessibility.parking')).length > 0 && (
+                            <p><strong>Parking:</strong> {safeArray(safeGet(selectedAsset.key_metrics_json, 'attributesAccessibility.parking')).map(attr => renderSafeValue(attr)).join(', ')}</p>
                           )}
-                          {selectedAsset.key_metrics_json.attributesAccessibility.planning?.length > 0 && Array.isArray(selectedAsset.key_metrics_json.attributesAccessibility.planning) && (
-                            <p><strong>Planning:</strong> {selectedAsset.key_metrics_json.attributesAccessibility.planning.map(attr => renderSafeValue(attr)).join(', ')}</p>
+                          {safeArray(safeGet(selectedAsset.key_metrics_json, 'attributesAccessibility.planning')).length > 0 && (
+                            <p><strong>Planning:</strong> {safeArray(safeGet(selectedAsset.key_metrics_json, 'attributesAccessibility.planning')).map(attr => renderSafeValue(attr)).join(', ')}</p>
                           )}
-                          {selectedAsset.key_metrics_json.attributesAccessibility.serviceOptions?.length > 0 && Array.isArray(selectedAsset.key_metrics_json.attributesAccessibility.serviceOptions) && (
-                            <p><strong>Service options:</strong> {selectedAsset.key_metrics_json.attributesAccessibility.serviceOptions.map(attr => renderSafeValue(attr)).join(', ')}</p>
+                          {safeArray(safeGet(selectedAsset.key_metrics_json, 'attributesAccessibility.serviceOptions')).length > 0 && (
+                            <p><strong>Service options:</strong> {safeArray(safeGet(selectedAsset.key_metrics_json, 'attributesAccessibility.serviceOptions')).map(attr => renderSafeValue(attr)).join(', ')}</p>
                           )}
-                          {selectedAsset.key_metrics_json.attributesAccessibility.languages?.length > 0 && Array.isArray(selectedAsset.key_metrics_json.attributesAccessibility.languages) && (
-                            <p><strong>Languages:</strong> {selectedAsset.key_metrics_json.attributesAccessibility.languages.map(attr => renderSafeValue(attr)).join(', ')}</p>
+                          {safeArray(safeGet(selectedAsset.key_metrics_json, 'attributesAccessibility.languages')).length > 0 && (
+                            <p><strong>Languages:</strong> {safeArray(safeGet(selectedAsset.key_metrics_json, 'attributesAccessibility.languages')).map(attr => renderSafeValue(attr)).join(', ')}</p>
                           )}
                         </div>
                       </div>
                     )}
 
-                    {selectedAsset.key_metrics_json.services && typeof selectedAsset.key_metrics_json.services === 'object' && (
+                    {safeGet(selectedAsset.key_metrics_json, 'services') && typeof safeGet(selectedAsset.key_metrics_json, 'services') === 'object' && (
                       <div>
                         <h4 className="font-semibold mb-2 flex items-center gap-2"><Users className="h-4 w-4 text-orange-500"/> Services</h4>
                         <div className="text-sm text-muted-foreground space-y-2">
-                          {selectedAsset.key_metrics_json.services.primaryCategory && typeof selectedAsset.key_metrics_json.services.primaryCategory === 'object' && (
+                          {safeGet(selectedAsset.key_metrics_json, 'services.primaryCategory') && typeof safeGet(selectedAsset.key_metrics_json, 'services.primaryCategory') === 'object' && (
                              <div>
-                               <p className="font-medium text-foreground">{renderSafeValue(selectedAsset.key_metrics_json.services.primaryCategory.name)}:</p>
+                               <p className="font-medium text-foreground">{renderSafeValue(safeGet(selectedAsset.key_metrics_json, 'services.primaryCategory.name'))}:</p>
                                <ul className="list-disc pl-5">
-                                 {Array.isArray(selectedAsset.key_metrics_json.services.primaryCategory.items) && selectedAsset.key_metrics_json.services.primaryCategory.items?.map((item: any, idx: number) => (
-                                   <li key={idx}><p>{renderSafeValue(item.name)}: {renderSafeValue(item.description)}</p></li>
+                                 {safeArray(safeGet(selectedAsset.key_metrics_json, 'services.primaryCategory.items')).map((item: any, idx: number) => (
+                                   <li key={idx}><p>{renderSafeValue(safeGet(item, 'name'))}: {renderSafeValue(safeGet(item, 'description'))}</p></li>
                                  ))}
                                </ul>
                              </div>
                           )}
-                          {Array.isArray(selectedAsset.key_metrics_json.services.additionalCategories) && selectedAsset.key_metrics_json.services.additionalCategories?.map((cat: any, cIdx: number) => (
+                          {safeArray(safeGet(selectedAsset.key_metrics_json, 'services.additionalCategories')).map((cat: any, cIdx: number) => (
                             <div key={cIdx}>
-                              <p className="font-medium text-foreground">{renderSafeValue(cat.name)}:</p>
+                              <p className="font-medium text-foreground">{renderSafeValue(safeGet(cat, 'name'))}:</p>
                               <ul className="list-disc pl-5">
-                                {Array.isArray(cat.items) && cat.items?.map((item: any, idx: number) => (
-                                  <li key={idx}><p>{renderSafeValue(item.name)}: {renderSafeValue(item.description)}</p></li>
+                                {safeArray(safeGet(cat, 'items')).map((item: any, idx: number) => (
+                                  <li key={idx}><p>{renderSafeValue(safeGet(item, 'name'))}: {renderSafeValue(safeGet(item, 'description'))}</p></li>
                                 ))}
                               </ul>
                             </div>
@@ -723,31 +740,31 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
                       </div>
                     )}
 
-                    {selectedAsset.key_metrics_json.qa?.length > 0 && Array.isArray(selectedAsset.key_metrics_json.qa) && (
+                    {safeArray(safeGet(selectedAsset.key_metrics_json, 'qa')).length > 0 && (
                       <div>
                         <h4 className="font-semibold mb-2 flex items-center gap-2"><MessageSquare className="h-4 w-4 text-indigo-500"/> Q&A</h4>
                         <div className="text-sm text-muted-foreground space-y-2">
-                          {selectedAsset.key_metrics_json.qa.map((item: any, idx: number) => (
+                          {safeArray(safeGet(selectedAsset.key_metrics_json, 'qa')).map((item: any, idx: number) => (
                             <div key={idx}>
-                              <p className="font-medium text-foreground">Q: {renderSafeValue(item.question)}</p>
-                              <p className="ml-4">A: {renderSafeValue(item.answer)}</p>
+                              <p className="font-medium text-foreground">Q: {renderSafeValue(safeGet(item, 'question'))}</p>
+                              <p className="ml-4">A: {renderSafeValue(safeGet(item, 'answer'))}</p>
                             </div>
                           ))}
                         </div>
                       </div>
                     )}
 
-                    {selectedAsset.key_metrics_json.posts?.length > 0 && Array.isArray(selectedAsset.key_metrics_json.posts) && (
+                    {safeArray(safeGet(selectedAsset.key_metrics_json, 'posts')).length > 0 && (
                       <div>
                         <h4 className="font-semibold mb-2 flex items-center gap-2"><FileText className="h-4 w-4 text-green-500"/> Posts</h4>
                         <div className="text-sm text-muted-foreground space-y-3">
-                          {selectedAsset.key_metrics_json.posts.map((post: any, idx: number) => (
+                          {safeArray(safeGet(selectedAsset.key_metrics_json, 'posts')).map((post: any, idx: number) => (
                             <div key={idx} className="border-b border-border pb-2 last:border-b-0">
-                              <p className="font-medium text-foreground">Update: {renderSafeValue(post.date)}</p>
-                              <p>{renderSafeValue(post.description)}</p>
-                              {post.button?.url && (
+                              <p className="font-medium text-foreground">Update: {renderSafeValue(safeGet(post, 'date'))}</p>
+                              <p>{renderSafeValue(safeGet(post, 'description'))}</p>
+                              {safeGet(post, 'button.url') && (
                                 <Button variant="link" size="sm" className="h-6 px-0 mt-1">
-                                  <a href={renderSafeValue(post.button.url)} target="_blank" rel="noopener noreferrer">{renderSafeValue(post.button.text, 'View Post')}</a>
+                                  <a href={renderSafeValue(safeGet(post, 'button.url'))} target="_blank" rel="noopener noreferrer">{renderSafeValue(safeGet(post, 'button.text'), 'View Post')}</a>
                                 </Button>
                               )}
                             </div>
@@ -763,20 +780,20 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
                   <div className="space-y-6 pt-6 md:pt-0 md:border-l md:pl-6 border-border">
                     <h3 className="text-xl font-bold">Website Performance Details</h3>
                     <div className="grid grid-cols-1 gap-4 text-sm text-muted-foreground">
-                      {selectedAsset.key_metrics_json.sessions && <p><strong>Total Sessions:</strong> {renderSafeValue(selectedAsset.key_metrics_json.sessions)}</p>}
-                      {selectedAsset.key_metrics_json.users && <p><strong>Total Users:</strong> {renderSafeValue(selectedAsset.key_metrics_json.users)}</p>}
-                      {selectedAsset.key_metrics_json.pageviews && <p><strong>Total Pageviews:</strong> {renderSafeValue(selectedAsset.key_metrics_json.pageviews)}</p>}
-                      {selectedAsset.key_metrics_json.bounce_rate && <p><strong>Bounce Rate:</strong> {renderSafeValue(selectedAsset.key_metrics_json.bounce_rate)}%</p>}
-                      {selectedAsset.key_metrics_json.avg_session_duration_seconds && <p><strong>Avg. Session Duration:</strong> {Math.floor(Number(renderSafeValue(selectedAsset.key_metrics_json.avg_session_duration_seconds)) / 60)}m {Number(renderSafeValue(selectedAsset.key_metrics_json.avg_session_duration_seconds)) % 60}s</p>}
-                      {selectedAsset.key_metrics_json.forms_submitted && <p><strong>Forms Submitted:</strong> {renderSafeValue(selectedAsset.key_metrics_json.forms_submitted)}</p>}
-                      {selectedAsset.key_metrics_json.seo_health_score && <p><strong>SEO Health Score:</strong> {renderSafeValue(selectedAsset.key_metrics_json.seo_health_score)}%</p>}
-                      {selectedAsset.key_metrics_json.core_web_vitals && typeof selectedAsset.key_metrics_json.core_web_vitals === 'object' && (
+                      {safeGet(selectedAsset.key_metrics_json, 'sessions') && <p><strong>Total Sessions:</strong> {renderSafeValue(safeGet(selectedAsset.key_metrics_json, 'sessions'))}</p>}
+                      {safeGet(selectedAsset.key_metrics_json, 'users') && <p><strong>Total Users:</strong> {renderSafeValue(safeGet(selectedAsset.key_metrics_json, 'users'))}</p>}
+                      {safeGet(selectedAsset.key_metrics_json, 'pageviews') && <p><strong>Total Pageviews:</strong> {renderSafeValue(safeGet(selectedAsset.key_metrics_json, 'pageviews'))}</p>}
+                      {safeGet(selectedAsset.key_metrics_json, 'bounce_rate') && <p><strong>Bounce Rate:</strong> {renderSafeValue(safeGet(selectedAsset.key_metrics_json, 'bounce_rate'))}%</p>}
+                      {safeGet(selectedAsset.key_metrics_json, 'avg_session_duration_seconds') && <p><strong>Avg. Session Duration:</strong> {Math.floor(Number(renderSafeValue(safeGet(selectedAsset.key_metrics_json, 'avg_session_duration_seconds'))) / 60)}m {Number(renderSafeValue(safeGet(selectedAsset.key_metrics_json, 'avg_session_duration_seconds'))) % 60}s</p>}
+                      {safeGet(selectedAsset.key_metrics_json, 'forms_submitted') && <p><strong>Forms Submitted:</strong> {renderSafeValue(safeGet(selectedAsset.key_metrics_json, 'forms_submitted'))}</p>}
+                      {safeGet(selectedAsset.key_metrics_json, 'seo_health_score') && <p><strong>SEO Health Score:</strong> {renderSafeValue(safeGet(selectedAsset.key_metrics_json, 'seo_health_score'))}%</p>}
+                      {safeGet(selectedAsset.key_metrics_json, 'core_web_vitals') && typeof safeGet(selectedAsset.key_metrics_json, 'core_web_vitals') === 'object' && (
                         <div>
                           <p className="font-semibold text-foreground mt-2">Core Web Vitals:</p>
                           <ul className="list-disc pl-5">
-                            {selectedAsset.key_metrics_json.core_web_vitals.lcp && <li>LCP: {renderSafeValue(selectedAsset.key_metrics_json.core_web_vitals.lcp)}</li>}
-                            {selectedAsset.key_metrics_json.core_web_vitals.fid && <li>FID: {renderSafeValue(selectedAsset.key_metrics_json.core_web_vitals.fid)}</li>}
-                            {selectedAsset.key_metrics_json.core_web_vitals.cls && <li>CLS: {renderSafeValue(selectedAsset.key_metrics_json.core_web_vitals.cls)}</li>}
+                            {safeGet(selectedAsset.key_metrics_json, 'core_web_vitals.lcp') && <li>LCP: {renderSafeValue(safeGet(selectedAsset.key_metrics_json, 'core_web_vitals.lcp'))}</li>}
+                            {safeGet(selectedAsset.key_metrics_json, 'core_web_vitals.fid') && <li>FID: {renderSafeValue(safeGet(selectedAsset.key_metrics_json, 'core_web_vitals.fid'))}</li>}
+                            {safeGet(selectedAsset.key_metrics_json, 'core_web_vitals.cls') && <li>CLS: {renderSafeValue(safeGet(selectedAsset.key_metrics_json, 'core_web_vitals.cls'))}</li>}
                           </ul>
                         </div>
                       )}
@@ -789,18 +806,18 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
                   <div className="space-y-6">
                     <h3 className="text-xl font-bold">Social Media Details</h3>
                     <div className="grid grid-cols-1 gap-4 text-sm text-muted-foreground">
-                      {selectedAsset.key_metrics_json.followers && <p><strong>Followers:</strong> {renderSafeValue(selectedAsset.key_metrics_json.followers)}</p>}
-                      {selectedAsset.key_metrics_json.engagement_rate_percent && <p><strong>Engagement Rate:</strong> {renderSafeValue(selectedAsset.key_metrics_json.engagement_rate_percent)}%</p>}
-                      {selectedAsset.key_metrics_json.posts_last_30d && <p><strong>Posts (last 30 days):</strong> {renderSafeValue(selectedAsset.key_metrics_json.posts_last_30d)}</p>}
-                      {selectedAsset.key_metrics_json.messages_received_last_7d && <p><strong>Messages (last 7 days):</strong> {renderSafeValue(selectedAsset.key_metrics_json.messages_received_last_7d)}</p>}
-                      {selectedAsset.key_metrics_json.reach && <p><strong>Reach:</strong> {renderSafeValue(selectedAsset.key_metrics_json.reach)}</p>}
-                      {selectedAsset.key_metrics_json.profile_visits && <p><strong>Profile Visits:</strong> {renderSafeValue(selectedAsset.key_metrics_json.profile_visits)}</p>}
-                      {selectedAsset.key_metrics_json.page_likes && <p><strong>Page Likes:</strong> {renderSafeValue(selectedAsset.key_metrics_json.page_likes)}</p>}
-                      {selectedAsset.key_metrics_json.top_performing_post && typeof selectedAsset.key_metrics_json.top_performing_post === 'object' && (
+                      {safeGet(selectedAsset.key_metrics_json, 'followers') && <p><strong>Followers:</strong> {renderSafeValue(safeGet(selectedAsset.key_metrics_json, 'followers'))}</p>}
+                      {safeGet(selectedAsset.key_metrics_json, 'engagement_rate_percent') && <p><strong>Engagement Rate:</strong> {renderSafeValue(safeGet(selectedAsset.key_metrics_json, 'engagement_rate_percent'))}%</p>}
+                      {safeGet(selectedAsset.key_metrics_json, 'posts_last_30d') && <p><strong>Posts (last 30 days):</strong> {renderSafeValue(safeGet(selectedAsset.key_metrics_json, 'posts_last_30d'))}</p>}
+                      {safeGet(selectedAsset.key_metrics_json, 'messages_received_last_7d') && <p><strong>Messages (last 7 days):</strong> {renderSafeValue(safeGet(selectedAsset.key_metrics_json, 'messages_received_last_7d'))}</p>}
+                      {safeGet(selectedAsset.key_metrics_json, 'reach') && <p><strong>Reach:</strong> {renderSafeValue(safeGet(selectedAsset.key_metrics_json, 'reach'))}</p>}
+                      {safeGet(selectedAsset.key_metrics_json, 'profile_visits') && <p><strong>Profile Visits:</strong> {renderSafeValue(safeGet(selectedAsset.key_metrics_json, 'profile_visits'))}</p>}
+                      {safeGet(selectedAsset.key_metrics_json, 'page_likes') && <p><strong>Page Likes:</strong> {renderSafeValue(safeGet(selectedAsset.key_metrics_json, 'page_likes'))}</p>}
+                      {safeGet(selectedAsset.key_metrics_json, 'top_performing_post') && typeof safeGet(selectedAsset.key_metrics_json, 'top_performing_post') === 'object' && (
                         <div>
                           <p className="font-semibold text-foreground mt-2">Top Post:</p>
-                          <p className="ml-4">{renderSafeValue(selectedAsset.key_metrics_json.top_performing_post.title)}</p>
-                          <p className="ml-4 text-xs text-muted-foreground">Likes: {renderSafeValue(selectedAsset.key_metrics_json.top_performing_post.likes)}, Comments: {renderSafeValue(selectedAsset.key_metrics_json.top_performing_post.comments)}</p>
+                          <p className="ml-4">{renderSafeValue(safeGet(selectedAsset.key_metrics_json, 'top_performing_post.title'))}</p>
+                          <p className="ml-4 text-xs text-muted-foreground">Likes: {renderSafeValue(safeGet(selectedAsset.key_metrics_json, 'top_performing_post.likes'))}, Comments: {renderSafeValue(safeGet(selectedAsset.key_metrics_json, 'top_performing_post.comments'))}</p>
                         </div>
                       )}
                     </div>
@@ -812,14 +829,14 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
                   <div className="space-y-6">
                     <h3 className="text-xl font-bold">Advertising Campaign Details</h3>
                     <div className="grid grid-cols-1 gap-4 text-sm text-muted-foreground">
-                      {selectedAsset.key_metrics_json.campaign_budget && <p><strong>Budget:</strong> ${renderSafeValue(selectedAsset.key_metrics_json.campaign_budget)}</p>}
-                      {selectedAsset.key_metrics_json.spend_current_month && <p><strong>Spend (Current Month):</strong> ${renderSafeValue(selectedAsset.key_metrics_json.spend_current_month)}</p>}
-                      {selectedAsset.key_metrics_json.impressions && <p><strong>Impressions:</strong> {renderSafeValue(selectedAsset.key_metrics_json.impressions)}</p>}
-                      {selectedAsset.key_metrics_json.clicks && <p><strong>Clicks:</strong> {renderSafeValue(selectedAsset.key_metrics_json.clicks)}</p>}
-                      {selectedAsset.key_metrics_json.conversions && <p><strong>Conversions:</strong> {renderSafeValue(selectedAsset.key_metrics_json.conversions)}</p>}
-                      {selectedAsset.key_metrics_json.ctr_percent && <p><strong>CTR:</strong> {renderSafeValue(selectedAsset.key_metrics_json.ctr_percent)}%</p>}
-                      {selectedAsset.key_metrics_json.cpc && <p><strong>CPC:</strong> ${renderSafeValue(selectedAsset.key_metrics_json.cpc)}</p>}
-                      {selectedAsset.key_metrics_json.conversion_value && <p><strong>Conversion Value:</strong> ${renderSafeValue(selectedAsset.key_metrics_json.conversion_value)}</p>}
+                      {safeGet(selectedAsset.key_metrics_json, 'campaign_budget') && <p><strong>Budget:</strong> ${renderSafeValue(safeGet(selectedAsset.key_metrics_json, 'campaign_budget'))}</p>}
+                      {safeGet(selectedAsset.key_metrics_json, 'spend_current_month') && <p><strong>Spend (Current Month):</strong> ${renderSafeValue(safeGet(selectedAsset.key_metrics_json, 'spend_current_month'))}</p>}
+                      {safeGet(selectedAsset.key_metrics_json, 'impressions') && <p><strong>Impressions:</strong> {renderSafeValue(safeGet(selectedAsset.key_metrics_json, 'impressions'))}</p>}
+                      {safeGet(selectedAsset.key_metrics_json, 'clicks') && <p><strong>Clicks:</strong> {renderSafeValue(safeGet(selectedAsset.key_metrics_json, 'clicks'))}</p>}
+                      {safeGet(selectedAsset.key_metrics_json, 'conversions') && <p><strong>Conversions:</strong> {renderSafeValue(safeGet(selectedAsset.key_metrics_json, 'conversions'))}</p>}
+                      {safeGet(selectedAsset.key_metrics_json, 'ctr_percent') && <p><strong>CTR:</strong> {renderSafeValue(safeGet(selectedAsset.key_metrics_json, 'ctr_percent'))}%</p>}
+                      {safeGet(selectedAsset.key_metrics_json, 'cpc') && <p><strong>CPC:</strong> ${renderSafeValue(safeGet(selectedAsset.key_metrics_json, 'cpc'))}</p>}
+                      {safeGet(selectedAsset.key_metrics_json, 'conversion_value') && <p><strong>Conversion Value:</strong> ${renderSafeValue(safeGet(selectedAsset.key_metrics_json, 'conversion_value'))}</p>}
                     </div>
                   </div>
                 )}
@@ -839,7 +856,10 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
                    </div>
                 )}
                 {/* Fallback if key_metrics_json is empty or contains only filtered-out common/specific metrics */}
-                {['directory', 'review_platform', 'content_platform', 'analytics_tool'].includes(selectedAsset.asset_type || '') && (!selectedAsset.key_metrics_json || (typeof selectedAsset.key_metrics_json === 'object' && Object.keys(selectedAsset.key_metrics_json).filter(([key, value]) => typeof value !== 'object' && !Array.isArray(value) && !['views', 'clicks', 'sessions', 'users', 'pageviews', 'followers', 'engagement', 'impressions', 'cost', 'calls', 'bounce_rate', 'avg_session_duration_seconds', 'forms_submitted', 'seo_health_score', 'core_web_vitals', 'campaign_budget', 'spend_current_month', 'conversions', 'ctr_percent', 'cpc', 'conversion_value', 'messages_received_last_7d', 'reach', 'profile_visits', 'page_likes', 'top_performing_post', 'businessInformation', 'contactSocials', 'locationAreas', 'businessHours', 'specialHours', 'attributesAccessibility', 'services', 'qa', 'posts'].includes(key)).length === 0)) && (
+                {['directory', 'review_platform', 'content_platform', 'analytics_tool'].includes(selectedAsset.asset_type || '') && (!selectedAsset.key_metrics_json || (typeof selectedAsset.key_metrics_json === 'object' && Object.keys(selectedAsset.key_metrics_json).filter(key => {
+                  const value = selectedAsset.key_metrics_json![key];
+                  return typeof value !== 'object' && !Array.isArray(value) && !['views', 'clicks', 'sessions', 'users', 'pageviews', 'followers', 'engagement', 'impressions', 'cost', 'calls', 'bounce_rate', 'avg_session_duration_seconds', 'forms_submitted', 'seo_health_score', 'core_web_vitals', 'campaign_budget', 'spend_current_month', 'conversions', 'ctr_percent', 'cpc', 'conversion_value', 'messages_received_last_7d', 'reach', 'profile_visits', 'page_likes', 'top_performing_post', 'businessInformation', 'contactSocials', 'locationAreas', 'businessHours', 'specialHours', 'attributesAccessibility', 'services', 'qa', 'posts'].includes(key);
+                }).length === 0)) && (
                    <div className="space-y-6">
                       <h3 className="text-xl font-bold">Additional Details</h3>
                       <div className="text-muted-foreground">
