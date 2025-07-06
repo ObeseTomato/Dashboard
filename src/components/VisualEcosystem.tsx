@@ -55,7 +55,7 @@ export const VisualEcosystem = ({ data, onAssetClick, onNavigate }: VisualEcosys
   const getAssetIcon = (type: string) => {
     switch (type) {
       case 'website': return Globe;
-      case 'gmb': return Star;
+      case 'business_profile': return Star;
       case 'social_media': return Users;
       case 'directory': return Globe;
       case 'advertising': return Megaphone;
@@ -121,7 +121,7 @@ const createEcosystemNodes = (): EcosystemNode[] => {
     const categories = [
       {
         name: 'Foundational Platforms',
-        assets: data.assets.filter(a => a.type === 'gmb' || a.type === 'website'),
+        assets: data.assets.filter(a => a.type === 'business_profile' || a.type === 'website'),
         angle: 0,
         color: '#10B981'
       },

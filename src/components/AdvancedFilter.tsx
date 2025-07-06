@@ -128,7 +128,7 @@ export const AdvancedFilter = ({ filters, onFiltersChange, onClear, type }: Adva
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="">All Types</SelectItem>
-                          <SelectItem value="gmb">Google My Business</SelectItem>
+                          <SelectItem value="business_profile">Google My Business</SelectItem>
                           <SelectItem value="website">Website</SelectItem>
                           <SelectItem value="social_media">Social Media</SelectItem>
                           <SelectItem value="directory">Directory</SelectItem>

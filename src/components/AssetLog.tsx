@@ -38,7 +38,7 @@ interface AssetLogProps {
 
 interface NewDigitalAsset {
   asset_name: string;
-  asset_type: 'gmb' | 'website' | 'social_media' | 'directory' | 'review_platform' | 'advertising';
+  asset_type: 'business_profile' | 'website' | 'social_media' | 'directory' | 'review_platform' | 'advertising';
   status: 'active' | 'warning' | 'critical' | 'inactive';
   priority: 'high' | 'medium' | 'low';
   url: string;
@@ -63,7 +63,7 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
   const getAssetIcon = (type: string) => {
     switch (type) {
       case 'website': return Globe;
-      case 'gmb': return Star;
+      case 'business_profile': return Star;
       case 'social_media': return Users;
       case 'directory': return Globe;
       case 'advertising': return Megaphone;
@@ -250,7 +250,7 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="website">Website</SelectItem>
-                      <SelectItem value="gmb">Google My Business</SelectItem>
+                      <SelectItem value="business_profile">Google My Business</SelectItem>
                       <SelectItem value="social_media">Social Media</SelectItem>
                       <SelectItem value="directory">Directory</SelectItem>
                       <SelectItem value="review_platform">Review Platform</SelectItem>
@@ -359,7 +359,7 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
               </TableHeader>
               <TableBody>
                 {categoryAssets.map((asset: any) => {
-                  const Icon = getAssetIcon(asset.asset_type);
+                  const Icon = getAssetIcon(asset.asset_type || 'website');
                   
                   return (
                     <TableRow 
