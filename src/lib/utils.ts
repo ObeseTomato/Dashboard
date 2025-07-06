@@ -27,3 +27,20 @@ export function safeGet<T = any>(obj: any, path: string | string[], defaultValue
 export function safeArray<T = any>(value: any): T[] {
   return Array.isArray(value) ? value : [];
 }
+// NEW: Utility to safely render any value as a string
+export function renderSafeValue(value: any): string {
+  if (value === null || value === undefined) {
+    return 'N/A';
+  }
+  if (typeof value === 'string' && value.trim() === '') {
+    return 'N/A';
+  }
+  if (typeof value === 'object') {
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return 'N/A';
+    }
+  }
+  return String(value);
+}
