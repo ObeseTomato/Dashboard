@@ -40,7 +40,7 @@ import {
 import { useDigitalAssets, useCreateDigitalAsset, useUpdateDigitalAsset } from '../hooks/useSupabaseAPI';
 import { useToast } from '../hooks/use-toast';
 import { DigitalAsset } from '../types/dashboard';
-import { cn, safeGet, safeArray } from '@/lib/utils'; // NEW: Import safeGet and safeArray
+import { cn, safeGet, safeArray } from '@/lib/utils';
 
 interface AssetLogProps {
   data?: any;
@@ -55,7 +55,6 @@ interface NewDigitalAsset {
   url: string;
 }
 
-// renderSafeValue utility function to prevent rendering errors from objects/null/undefined
 const renderSafeValue = (value: any, fallback: string = 'N/A'): string => {
   if (value === null || value === undefined) return fallback;
   if (typeof value === 'string') return value;
@@ -93,7 +92,6 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
   const [selectedAsset, setSelectedAsset] = useState<DigitalAsset | null>(null);
   const { toast } = useToast();
 
-  // Supabase hooks
   const { data: assetsData, isLoading, error } = useDigitalAssets();
   const createAssetMutation = useCreateDigitalAsset();
   const updateAssetMutation = useUpdateDigitalAsset();
@@ -426,7 +424,7 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {safeArray(categoryAssets).map((asset: DigitalAsset) => { // Use safeArray for categoryAssets
+                {safeArray(categoryAssets).map((asset: DigitalAsset) => {
                   const Icon = getAssetIcon(asset.asset_type || '');
 
                   return (
@@ -443,7 +441,7 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
                       </TableCell>
                       <TableCell className="align-top">
                         <div className="flex flex-col min-w-0">
-                          <p className="font-medium">{renderSafeValue(asset.asset_name)}</p> {/* Use renderSafeValue */}
+                          <p className="font-medium">{renderSafeValue(asset.asset_name)}</p>
                           {asset.url && (
                             <p className="text-xs text-muted-foreground truncate max-w-[150px]">
                               {renderSafeValue(asset.url)}
@@ -464,10 +462,8 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
                         </div>
                       </TableCell>
                       <TableCell className="align-top">
-                        {/* More robust check for key_metrics_json existence and being an object */}
                         {asset.key_metrics_json && typeof asset.key_metrics_json === 'object' && Object.keys(asset.key_metrics_json).length > 0 ? (
                           <div className="space-y-1">
-                            {/* Filter out complex objects/arrays from generic display in table row */}
                             {Object.entries(asset.key_metrics_json).filter(([key, value]) => typeof value !== 'object' && !Array.isArray(value)).slice(0, 2).map(([key, value]: [string, any]) => (
                               <div key={key} className="flex items-center space-x-2 text-xs">
                                 <span className="text-muted-foreground">{key}:</span>
@@ -562,11 +558,7 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
                   <div>
                     <h4 className="font-semibold mb-3">Performance Metrics (Summary)</h4>
                     <div className="grid grid-cols-2 gap-4">
-                      {/* Filter out complex objects/arrays and specific GBP top-level keys from generic display */}
-                      {Object.entries(selectedAsset.key_metrics_json).filter(([key, value]) =>
-                          typeof value !== 'object' && !Array.isArray(value) &&
-                          !['businessInformation', 'contactSocials', 'locationAreas', 'businessHours', 'specialHours', 'attributesAccessibility', 'services', 'qa', 'posts', 'sessions', 'users', 'pageviews', 'bounce_rate', 'avg_session_duration_seconds', 'forms_submitted', 'seo_health_score', 'core_web_vitals', 'followers', 'engagement_rate_percent', 'posts_last_30d', 'messages_received_last_7d', 'reach', 'profile_visits', 'page_likes', 'top_performing_post', 'campaign_budget', 'spend_current_month', 'impressions', 'clicks', 'conversions', 'ctr_percent', 'cpc', 'conversion_value'].includes(key)
-                      ).map(([key, value]) => (
+                      {Object.entries(selectedAsset.key_metrics_json).filter(([key, value]) => typeof value !== 'object' && !Array.isArray(value)).map(([key, value]) => (
                         <div key={key} className="bg-muted/50 p-3 rounded-lg">
                           <div className="text-sm text-muted-foreground">{renderSafeValue(key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()))}</div>
                           <div className="text-lg font-semibold">
@@ -607,7 +599,7 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
                           {selectedAsset.key_metrics_json.businessInformation.primaryCategory && (
                             <p><strong>Primary Category:</strong> {renderSafeValue(selectedAsset.key_metrics_json.businessInformation.primaryCategory)}</p>
                           )}
-                          {safeArray(selectedAsset.key_metrics_json.businessInformation.additionalCategories).length > 0 && ( // Use safeArray
+                          {safeArray(selectedAsset.key_metrics_json.businessInformation.additionalCategories).length > 0 && (
                             <p><strong>Additional Categories:</strong> {safeArray(selectedAsset.key_metrics_json.businessInformation.additionalCategories).map(cat => renderSafeValue(cat)).join(', ')}</p>
                           )}
                           {selectedAsset.key_metrics_json.description && (
@@ -647,7 +639,7 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
                           {selectedAsset.key_metrics_json.locationAreas.businessLocation && (
                             <p><strong>Location:</strong> {renderSafeValue(selectedAsset.key_metrics_json.locationAreas.businessLocation)}</p>
                           )}
-                          {safeArray(selectedAsset.key_metrics_json.locationAreas.serviceAreas).length > 0 && ( // Use safeArray
+                          {safeArray(selectedAsset.key_metrics_json.locationAreas.serviceAreas).length > 0 && (
                             <p><strong>Service Areas:</strong> {safeArray(selectedAsset.key_metrics_json.locationAreas.serviceAreas).map(area => renderSafeValue(area)).join(', ')}</p>
                           )}
                         </div>
@@ -672,28 +664,28 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
                       <div>
                         <h4 className="font-semibold mb-2 flex items-center gap-2"><CheckCircle className="h-4 w-4 text-purple-500"/> Attributes & Accessibility</h4>
                         <div className="text-sm text-muted-foreground space-y-1">
-                          {safeArray(selectedAsset.key_metrics_json.attributesAccessibility.fromTheBusiness).length > 0 && ( // Use safeArray
+                          {safeArray(selectedAsset.key_metrics_json.attributesAccessibility.fromTheBusiness).length > 0 && (
                             <p><strong>From the business:</strong> {safeArray(selectedAsset.key_metrics_json.attributesAccessibility.fromTheBusiness).map(attr => renderSafeValue(attr)).join(', ')}</p>
                           )}
-                          {safeArray(selectedAsset.key_metrics_json.attributesAccessibility.accessibility).length > 0 && ( // Use safeArray
+                          {safeArray(selectedAsset.key_metrics_json.attributesAccessibility.accessibility).length > 0 && (
                             <p><strong>Accessibility:</strong> {safeArray(selectedAsset.key_metrics_json.attributesAccessibility.accessibility).map(attr => renderSafeValue(attr)).join(', ')}</p>
                           )}
-                          {safeArray(selectedAsset.key_metrics_json.attributesAccessibility.amenities).length > 0 && ( // Use safeArray
+                          {safeArray(selectedAsset.key_metrics_json.attributesAccessibility.amenities).length > 0 && (
                             <p><strong>Amenities:</strong> {safeArray(selectedAsset.key_metrics_json.attributesAccessibility.amenities).map(attr => renderSafeValue(attr)).join(', ')}</p>
                           )}
-                          {safeArray(selectedAsset.key_metrics_json.attributesAccessibility.crowd).length > 0 && ( // Use safeArray
+                          {safeArray(selectedAsset.key_metrics_json.attributesAccessibility.crowd).length > 0 && (
                             <p><strong>Crowd:</strong> {safeArray(selectedAsset.key_metrics_json.attributesAccessibility.crowd).map(attr => renderSafeValue(attr)).join(', ')}</p>
                           )}
-                          {safeArray(selectedAsset.key_metrics_json.attributesAccessibility.parking).length > 0 && ( // Use safeArray
+                          {safeArray(selectedAsset.key_metrics_json.attributesAccessibility.parking).length > 0 && (
                             <p><strong>Parking:</strong> {safeArray(selectedAsset.key_metrics_json.attributesAccessibility.parking).map(attr => renderSafeValue(attr)).join(', ')}</p>
                           )}
-                          {safeArray(selectedAsset.key_metrics_json.attributesAccessibility.planning).length > 0 && ( // Use safeArray
+                          {safeArray(selectedAsset.key_metrics_json.attributesAccessibility.planning).length > 0 && (
                             <p><strong>Planning:</strong> {safeArray(selectedAsset.key_metrics_json.attributesAccessibility.planning).map(attr => renderSafeValue(attr)).join(', ')}</p>
                           )}
-                          {safeArray(selectedAsset.key_metrics_json.attributesAccessibility.serviceOptions).length > 0 && ( // Use safeArray
+                          {safeArray(selectedAsset.key_metrics_json.attributesAccessibility.serviceOptions).length > 0 && (
                             <p><strong>Service options:</strong> {safeArray(selectedAsset.key_metrics_json.attributesAccessibility.serviceOptions).map(attr => renderSafeValue(attr)).join(', ')}</p>
                           )}
-                          {safeArray(selectedAsset.key_metrics_json.attributesAccessibility.languages).length > 0 && ( // Use safeArray
+                          {safeArray(selectedAsset.key_metrics_json.attributesAccessibility.languages).length > 0 && (
                             <p><strong>Languages:</strong> {safeArray(selectedAsset.key_metrics_json.attributesAccessibility.languages).map(attr => renderSafeValue(attr)).join(', ')}</p>
                           )}
                         </div>
@@ -708,17 +700,17 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
                              <div>
                                <p className="font-medium text-foreground">{renderSafeValue(selectedAsset.key_metrics_json.services.primaryCategory.name)}:</p>
                                <ul className="list-disc pl-5">
-                                 {safeArray(selectedAsset.key_metrics_json.services.primaryCategory.items).map((item: any, idx: number) => ( // Use safeArray
+                                 {safeArray(selectedAsset.key_metrics_json.services.primaryCategory.items).map((item: any, idx: number) => (
                                    <li key={idx}><p>{renderSafeValue(item.name)}: {renderSafeValue(item.description)}</p></li>
                                  ))}
                                </ul>
                              </div>
                           )}
-                          {safeArray(selectedAsset.key_metrics_json.services.additionalCategories).map((cat: any, cIdx: number) => ( // Use safeArray
+                          {safeArray(selectedAsset.key_metrics_json.services.additionalCategories).map((cat: any, cIdx: number) => (
                             <div key={cIdx}>
                               <p className="font-medium text-foreground">{renderSafeValue(cat.name)}:</p>
                               <ul className="list-disc pl-5">
-                                {safeArray(cat.items).map((item: any, idx: number) => ( // Use safeArray
+                                {safeArray(cat.items).map((item: any, idx: number) => (
                                   <li key={idx}><p>{renderSafeValue(item.name)}: {renderSafeValue(item.description)}</p></li>
                                 ))}
                               </ul>
