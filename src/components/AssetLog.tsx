@@ -7,7 +7,7 @@ import { Textarea } from './ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
 import { Label } from './ui/label';
-import { 
+import {
   Table,
   TableBody,
   TableCell,
@@ -15,10 +15,10 @@ import {
   TableHeader,
   TableRow,
 } from './ui/table';
-import { 
-  Globe, 
-  Star, 
-  Users, 
+import {
+  Globe,
+  Star,
+  Users,
   Megaphone,
   ExternalLink,
   Eye,
@@ -31,8 +31,28 @@ import {
 import { useDigitalAssets, useCreateDigitalAsset, useUpdateDigitalAsset } from '../hooks/useSupabaseAPI';
 import { useToast } from '../hooks/use-toast';
 
+// Assuming AssetType, AssetStatus, and Priority are defined elsewhere, e.g., in a types.ts file
+// If not, you would define them here, for example:
+// export type AssetType = 'business_profile' | 'website' | 'social_media' | 'directory' | 'review_platform' | 'advertising';
+// export type AssetStatus = 'active' | 'warning' | 'critical' | 'inactive';
+// export type Priority = 'high' | 'medium' | 'low';
+
+export interface DigitalAsset {
+  id: number;
+  asset_name: string;
+  asset_type: string | null; // Keep as string to match the most likely DB type
+  url: string | null;
+  status: string | null; // Keep as string
+  priority: string | null; // Keep as string
+  last_updated: string | null;
+  key_metrics_json: Record<string, any> | null;
+  platform_id_external: string | null;
+  created_at: string;
+  updated_at: string | null;
+}
+
 interface AssetLogProps {
-  data?: any; // Keep for compatibility but use Supabase data
+  data?: any;
   onAssetClick?: (assetId: string) => void;
 }
 
@@ -55,12 +75,11 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
   });
   const { toast } = useToast();
 
-  // Supabase hooks
   const { data: assetsData, isLoading, error } = useDigitalAssets();
   const createAssetMutation = useCreateDigitalAsset();
   const updateAssetMutation = useUpdateDigitalAsset();
 
-  const getAssetIcon = (type: string) => {
+  const getAssetIcon = (type: string | null) => {
     switch (type) {
       case 'website': return Globe;
       case 'business_profile': return Star;
@@ -112,7 +131,6 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
 
       await createAssetMutation.mutateAsync(newAsset as any);
 
-      // Reset form
       setNewAsset({
         asset_name: '',
         asset_type: 'website',
@@ -195,21 +213,22 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
     );
   }
 
-const assets = assetsData || [];
-// Define the type for the accumulator object
-type AssetGroups = { [key: string]: DigitalAsset[] };
+  const assets = assetsData || [];
+  
+  // CORRECTED: Define a strict type for the grouped assets object
+  type AssetGroups = { [key: string]: DigitalAsset[] };
 
-const groupedAssets: AssetGroups = assets.reduce((groups: AssetGroups, asset: DigitalAsset) => {
-  // Ensure asset_type is a string before calling string methods
-  const assetTypeString = asset.asset_type || 'general';
-  const category = assetTypeString.replace('_', ' ').toUpperCase();
-
-  if (!groups[category]) {
-    groups[category] = [];
-  }
-  groups[category].push(asset);
-  return groups;
-}, {}); // Initialize with the correct type
+  // CORRECTED: Use the strict types in the reduce function
+  const groupedAssets: AssetGroups = assets.reduce((groups: AssetGroups, asset: DigitalAsset) => {
+    const assetTypeString = asset.asset_type || 'general';
+    const category = assetTypeString.replace(/_/g, ' ').toUpperCase();
+    
+    if (!groups[category]) {
+      groups[category] = [];
+    }
+    groups[category].push(asset);
+    return groups;
+  }, {});
 
   return (
     <div className="p-6 space-y-6">
@@ -328,21 +347,22 @@ const groupedAssets: AssetGroups = assets.reduce((groups: AssetGroups, asset: Di
           <div className="flex items-center space-x-4 text-sm">
             <div className="flex items-center space-x-2">
               <div className="w-3 h-3 rounded-full bg-success"></div>
-              <span>Active ({assets.filter((a: any) => a.status === 'active').length})</span>
+              <span>Active ({assets.filter((a: DigitalAsset) => a.status === 'active').length})</span>
             </div>
             <div className="flex items-center space-x-2">
               <div className="w-3 h-3 rounded-full bg-warning"></div>
-              <span>Warning ({assets.filter((a: any) => a.status === 'warning').length})</span>
+              <span>Warning ({assets.filter((a: DigitalAsset) => a.status === 'warning').length})</span>
             </div>
             <div className="flex items-center space-x-2">
               <div className="w-3 h-3 rounded-full bg-destructive"></div>
-              <span>Critical ({assets.filter((a: any) => a.status === 'critical').length})</span>
+              <span>Critical ({assets.filter((a: DigitalAsset) => a.status === 'critical').length})</span>
             </div>
           </div>
         </div>
       </div>
 
-      {Object.entries(groupedAssets).map(([category, categoryAssets]: [string, any]) => (
+      {/* CORRECTED: Use the strict types in the map function */}
+      {Object.entries(groupedAssets).map(([category, categoryAssets]: [string, DigitalAsset[]]) => (
         <Card key={category}>
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
@@ -363,13 +383,14 @@ const groupedAssets: AssetGroups = assets.reduce((groups: AssetGroups, asset: Di
                   <TableHead className="w-32">Actions</TableHead>
                 </TableRow>
               </TableHeader>
+              {/* CORRECTED: Use the strict DigitalAsset type in the nested map */}
               <TableBody>
-                {categoryAssets.map((asset: any) => {
-                  const Icon = getAssetIcon(asset.asset_type || 'website');
+                {categoryAssets.map((asset: DigitalAsset) => {
+                  const Icon = getAssetIcon(asset.asset_type);
                   
                   return (
-                    <TableRow 
-                      key={asset.id} 
+                    <TableRow
+                      key={asset.id}
                       className="hover:bg-muted/50 cursor-pointer"
                       onClick={() => onAssetClick?.(asset.id.toString())}
                     >
@@ -404,7 +425,7 @@ const groupedAssets: AssetGroups = assets.reduce((groups: AssetGroups, asset: Di
                             {Object.entries(asset.key_metrics_json).slice(0, 2).map(([key, value]: [string, any]) => (
                               <div key={key} className="flex items-center space-x-2 text-xs">
                                 <span className="text-muted-foreground">{key}:</span>
-                                <span className="font-medium">{typeof value === 'number' ? value.toLocaleString() : value}</span>
+                                <span className="font-medium">{typeof value === 'number' ? value.toLocaleString() : String(value)}</span>
                                 <TrendingUp className="h-3 w-3 text-success" />
                               </div>
                             ))}
