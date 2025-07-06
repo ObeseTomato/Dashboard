@@ -5,7 +5,7 @@ import { Button } from './ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 import { DashboardData } from '../types/dashboard';
-import { useDigitalAssets } from '../hooks/useSupabaseAPI'; // Import useDigitalAssets
+import { useDigitalAssets } from '../hooks/useSupabaseAPI';
 import {
   Globe,
   Star,
@@ -19,10 +19,10 @@ import {
   ChevronRight,
   Monitor,
   FileText,
-  Loader2, // Added Loader2 for loading state
+  Loader2,
   Phone, MapPin, MessageSquare // Added for expanded tooltip/modal details
 } from 'lucide-react';
-import { cn, safeGet, safeArray } from '@/lib/utils'; // NEW: Import safeGet and safeArray
+import { cn, safeGet, safeArray, renderSafeValue } from '@/lib/utils'; // ADDED renderSafeValue to import
 
 interface VisualEcosystemProps {
   data: DashboardData;
@@ -49,7 +49,6 @@ export const VisualEcosystem = ({ data, onAssetClick, onNavigate }: VisualEcosys
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
   const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(() => new Set());
 
-  // NEW: Fetch live digital assets data
   const { data: digitalAssetsData, isLoading, error } = useDigitalAssets();
 
   const getAssetIcon = (type: string) => {
@@ -78,7 +77,6 @@ export const VisualEcosystem = ({ data, onAssetClick, onNavigate }: VisualEcosys
     }
   };
 
-  // NEW: Function to get priority-based styling - re-used from AssetLog
   const getPriorityColor = (priority: string) => {
     const priorityString = String(priority || 'medium');
     switch (priorityString) {
@@ -113,7 +111,6 @@ export const VisualEcosystem = ({ data, onAssetClick, onNavigate }: VisualEcosys
     });
   };
 
-  // Memoize ecosystemNodes creation to prevent unnecessary re-runs
   const ecosystemNodes = useMemo(() => {
     const assetsToRender = digitalAssetsData || [];
 
@@ -142,37 +139,37 @@ export const VisualEcosystem = ({ data, onAssetClick, onNavigate }: VisualEcosys
     const categories = [
       {
         name: 'Business Profiles',
-        assets: safeArray(assetsToRender.filter(a => a.asset_type === 'business_profile')), // Use safeArray
+        assets: safeArray(assetsToRender.filter(a => a.asset_type === 'business_profile')),
         angle: 0,
         color: '#10B981'
       },
       {
         name: 'Website Platforms',
-        assets: safeArray(assetsToRender.filter(a => a.asset_type === 'website')), // Use safeArray
+        assets: safeArray(assetsToRender.filter(a => a.asset_type === 'website')),
         angle: Math.PI / 3,
         color: '#3B82F6'
       },
       {
         name: 'Social Media',
-        assets: safeArray(assetsToRender.filter(a => a.asset_type === 'social_media')), // Use safeArray
+        assets: safeArray(assetsToRender.filter(a => a.asset_type === 'social_media')),
         angle: 2 * Math.PI / 3,
         color: '#8B5CF6'
       },
       {
         name: 'Directories & Reviews',
-        assets: safeArray(assetsToRender.filter(a => a.asset_type === 'directory' || a.asset_type === 'review_platform')), // Use safeArray
+        assets: safeArray(assetsToRender.filter(a => a.asset_type === 'directory' || a.asset_type === 'review_platform')),
         angle: Math.PI,
         color: '#F59E0B'
       },
       {
         name: 'Advertising',
-        assets: safeArray(assetsToRender.filter(a => a.asset_type === 'advertising')), // Use safeArray
+        assets: safeArray(assetsToRender.filter(a => a.asset_type === 'advertising')),
         angle: 4 * Math.PI / 3,
         color: '#EF4444'
       },
       {
         name: 'Content & Tools',
-        assets: safeArray(assetsToRender.filter(a => a.asset_type === 'content_platform' || a.asset_type === 'analytics_tool')), // Use safeArray
+        assets: safeArray(assetsToRender.filter(a => a.asset_type === 'content_platform' || a.asset_type === 'analytics_tool')),
         angle: 5 * Math.PI / 3,
         color: '#6366F1'
       }
@@ -209,11 +206,11 @@ export const VisualEcosystem = ({ data, onAssetClick, onNavigate }: VisualEcosys
 
             nodes.push({
               id: asset.id.toString(),
-              name: renderSafeValue(asset.asset_name), // Use renderSafeValue
-              type: renderSafeValue(asset.asset_type), // Use renderSafeValue
+              name: renderSafeValue(asset.asset_name),
+              type: renderSafeValue(asset.asset_type),
               category: category.name,
-              status: renderSafeValue(asset.status), // Use renderSafeValue
-              priority: renderSafeValue(asset.priority), // Use renderSafeValue
+              status: renderSafeValue(asset.status),
+              priority: renderSafeValue(asset.priority),
               x: assetX,
               y: assetY,
               metrics: asset.key_metrics_json,
@@ -244,7 +241,7 @@ export const VisualEcosystem = ({ data, onAssetClick, onNavigate }: VisualEcosys
         id: asset.id.toString(),
         name: renderSafeValue(asset.asset_name),
         type: renderSafeValue(asset.asset_type),
-        category: renderSafeValue(node.category), // Ensure category is string
+        category: renderSafeValue(node.category),
         status: renderSafeValue(asset.status),
         priority: renderSafeValue(asset.priority),
         x: node.x, y: node.y,
@@ -296,7 +293,7 @@ export const VisualEcosystem = ({ data, onAssetClick, onNavigate }: VisualEcosys
 
   const assetsForOverview = digitalAssetsData || [];
   const groupedAssets = assetsForOverview.reduce((groups, asset) => {
-    const type = String(asset.asset_type || 'general'); // Ensure type is string
+    const type = String(asset.asset_type || 'general');
     if (!groups[type]) {
       groups[type] = [];
     }
@@ -335,7 +332,7 @@ export const VisualEcosystem = ({ data, onAssetClick, onNavigate }: VisualEcosys
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {Object.entries(groupedAssets).map(([type, assets]) => {
             const Icon = getAssetIcon(type);
-            const typeLabel = String(type).replace(/_/g, ' ').toUpperCase(); // Ensure type is string
+            const typeLabel = String(type).replace(/_/g, ' ').toUpperCase();
 
             return (
               <Card key={type} className="hover:shadow-lg transition-all duration-300">
@@ -347,7 +344,7 @@ export const VisualEcosystem = ({ data, onAssetClick, onNavigate }: VisualEcosys
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  {safeArray(assets).map(asset => { // Use safeArray
+                  {safeArray(assets).map(asset => {
                     const StatusIcon = getStatusIcon(asset.status || '');
 
                     return (
@@ -355,18 +352,18 @@ export const VisualEcosystem = ({ data, onAssetClick, onNavigate }: VisualEcosys
                         key={asset.id}
                         className={cn(
                           "p-3 pr-4 rounded-lg border-l-4 cursor-pointer transition-all duration-200 hover:scale-105",
-                          getStatusColor(asset.status || ''), // Ensure status is string
-                          getPriorityColor(asset.priority || 'medium') // Ensure priority is string
+                          getStatusColor(asset.status || ''),
+                          getPriorityColor(asset.priority || 'medium')
                         )}
                         onClick={() => {
-                          setSelectedNode({ // Construct EcosystemNode from fetched asset
+                          setSelectedNode({
                             id: asset.id.toString(),
                             name: renderSafeValue(asset.asset_name),
                             type: renderSafeValue(asset.asset_type),
                             category: typeLabel,
                             status: renderSafeValue(asset.status),
                             priority: renderSafeValue(asset.priority),
-                            x: 0, y: 0, // Placeholder coords
+                            x: 0, y: 0,
                             metrics: asset.key_metrics_json,
                             url: renderSafeValue(asset.url),
                             description: `${asset.asset_type ? renderSafeValue(String(asset.asset_type).replace('_', ' ')) : 'Asset'} with ${renderSafeValue(asset.status)} status`
@@ -395,7 +392,6 @@ export const VisualEcosystem = ({ data, onAssetClick, onNavigate }: VisualEcosys
                         {asset.key_metrics_json && typeof asset.key_metrics_json === 'object' && Object.keys(asset.key_metrics_json).length > 0 ? (
                           <div className="mt-2 pt-2 border-t border-current/20">
                             <div className="grid grid-cols-2 gap-1 text-xs">
-                              {/* Show first 2 common metrics */}
                               {Object.entries(asset.key_metrics_json).filter(([key, value]) => typeof value !== 'object' && !Array.isArray(value)).slice(0, 2).map(([key, value]) => (
                                 <div key={key} className="flex justify-between">
                                   <span className="opacity-75">{key}:</span>
@@ -506,7 +502,6 @@ export const VisualEcosystem = ({ data, onAssetClick, onNavigate }: VisualEcosys
                 {ecosystemNodes
                   .filter(node => node.type !== 'hub' && node.type !== 'category')
                   .map(assetNode => {
-                    // Find the category this asset belongs to
                     const categoryNode = ecosystemNodes.find(n =>
                       n.type === 'category' && n.name === assetNode.category
                     );
@@ -561,7 +556,7 @@ export const VisualEcosystem = ({ data, onAssetClick, onNavigate }: VisualEcosys
                             ? 'w-20 h-20 bg-gradient-to-br from-primary to-primary-glow border-primary text-white'
                             : node.type === 'category'
                             ? 'w-16 h-16 bg-gradient-to-br from-slate-200 to-slate-300 border-slate-400 text-slate-700'
-                            : `w-12 h-12 ${getStatusColor(node.status || '')} border-2` // Ensure status is string
+                            : `w-12 h-12 ${getStatusColor(node.status || '')} border-2`
                         )}
                       >
                         <Icon className={cn(
@@ -618,7 +613,7 @@ export const VisualEcosystem = ({ data, onAssetClick, onNavigate }: VisualEcosys
                             {node.metrics && typeof node.metrics === 'object' && Object.keys(node.metrics).length > 0 && (
                                 <div className="mt-1 border-t border-border pt-1">
                                     {Object.entries(node.metrics).slice(0, 2).map(([key, value]) => (
-                                        typeof value !== 'object' && !Array.isArray(value) ? ( // Filter out objects/arrays
+                                        typeof value !== 'object' && !Array.isArray(value) ? (
                                             <p key={key} className="flex justify-between text-[0.6rem] capitalize">
                                                 <span>{renderSafeValue(key)}:</span> <span className="font-medium">{renderSafeValue(value)}</span>
                                             </p>
