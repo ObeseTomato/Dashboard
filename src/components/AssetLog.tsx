@@ -29,17 +29,13 @@ import {
   Trash2,
   AlertTriangle,
   CheckCircle,
-  Pencil,
-  Phone,
-  MapPin,
-  Clock,
-  MessageSquare,
-  FileText
+  Pencil
+  // Removed Phone, MapPin, Clock, MessageSquare, FileText imports as they are no longer used in the simplified dialog
 } from 'lucide-react';
 import { useDigitalAssets, useCreateDigitalAsset, useUpdateDigitalAsset } from '../hooks/useSupabaseAPI';
 import { useToast } from '../hooks/use-toast';
 import { DigitalAsset } from '../types/dashboard';
-import { cn, safeGet, safeArray } from '@/lib/utils'; // Import safeGet and safeArray
+import { cn, safeGet, safeArray, renderSafeValue } from '@/lib/utils';
 
 interface AssetLogProps {
   data?: any;
@@ -54,7 +50,6 @@ interface NewDigitalAsset {
   url: string;
 }
 
-// This renderSafeValue is now also used inside the component's render logic for consistency
 const renderSafeValue = (value: any, fallback: string = 'N/A'): string => {
   if (value === null || value === undefined) return fallback;
   if (typeof value === 'string') return value;
@@ -362,7 +357,7 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
                     id="url"
                     value={newAsset.url}
                     onChange={(e) => setNewAsset({...newAsset, url: e.target.value})}
-                    placeholder="[https://example.com](https://example.com)"
+                    placeholder="https://example.com"
                   />
                 </div>
 
@@ -462,12 +457,9 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
                         </div>
                       </TableCell>
                       <TableCell className="align-top">
-                        {/* More robust check for key_metrics_json existence and being an object */}
                         {asset.key_metrics_json && typeof asset.key_metrics_json === 'object' && Object.keys(asset.key_metrics_json).length > 0 ? (
                           <div className="space-y-1">
-                            {/* Slice to show only 2 key metrics in the table row */}
                             {Object.entries(asset.key_metrics_json).filter(([key, value]) => typeof value !== 'object' && !Array.isArray(value)).slice(0, 2).map(([key, value]: [string, any]) => (
-                              // Ensure value is not an object/array before attempting to display directly
                               <div key={key} className="flex items-center space-x-2 text-xs">
                                 <span className="text-muted-foreground">{key}:</span>
                                 <span className="font-medium">{renderSafeValue(value)}</span>
@@ -540,8 +532,8 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
                   <Badge className={getStatusBadge(selectedAsset.status || '')}>
                     {selectedAsset.status}
                   </Badge>
-                  <Badge variant={selectedAsset.priority === 'high' ? 'destructive' :
-                                 selectedAsset.priority === 'medium' ? 'default' : 'secondary'}>
+                  <Badge variant={String(selectedAsset.priority || 'medium') === 'high' ? 'destructive' :
+                                 String(selectedAsset.priority || 'medium') === 'medium' ? 'default' : 'secondary'}>
                     {selectedAsset.priority} priority
                   </Badge>
                 </div>
@@ -596,7 +588,7 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
                   <>
                     <h3 className="text-xl font-bold">Business Profile Details</h3>
 
-                    {safeGet(selectedAsset.key_metrics_json, 'businessInformation') && (
+                    {safeGet(selectedAsset.key_metrics_json, 'businessInformation') && typeof safeGet(selectedAsset.key_metrics_json, 'businessInformation') === 'object' && (
                       <div>
                         <h4 className="font-semibold mb-2 flex items-center gap-2"><Star className="h-4 w-4 text-yellow-500"/> Business Information</h4>
                         <div className="text-sm text-muted-foreground space-y-1">
@@ -619,7 +611,7 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
                       </div>
                     )}
 
-                    {safeGet(selectedAsset.key_metrics_json, 'contactSocials') && (
+                    {safeGet(selectedAsset.key_metrics_json, 'contactSocials') && typeof safeGet(selectedAsset.key_metrics_json, 'contactSocials') === 'object' && (
                       <div>
                         <h4 className="font-semibold mb-2 flex items-center gap-2"><Phone className="h-4 w-4 text-blue-500"/> Contact & Socials</h4>
                         <div className="text-sm text-muted-foreground space-y-1">
@@ -639,7 +631,7 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
                       </div>
                     )}
 
-                    {safeGet(selectedAsset.key_metrics_json, 'locationAreas') && (
+                    {safeGet(selectedAsset.key_metrics_json, 'locationAreas') && typeof safeGet(selectedAsset.key_metrics_json, 'locationAreas') === 'object' && (
                       <div>
                         <h4 className="font-semibold mb-2 flex items-center gap-2"><MapPin className="h-4 w-4 text-red-500"/> Location and Areas</h4>
                         <div className="text-sm text-muted-foreground space-y-1">
@@ -653,7 +645,7 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
                       </div>
                     )}
 
-                    {safeGet(selectedAsset.key_metrics_json, 'businessHours') && (
+                    {safeGet(selectedAsset.key_metrics_json, 'businessHours') && typeof safeGet(selectedAsset.key_metrics_json, 'businessHours') === 'object' && (
                       <div>
                         <h4 className="font-semibold mb-2 flex items-center gap-2"><Clock className="h-4 w-4 text-gray-500"/> Business Hours</h4>
                         <div className="text-sm text-muted-foreground space-y-1">
@@ -667,7 +659,7 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
                       </div>
                     )}
 
-                    {safeGet(selectedAsset.key_metrics_json, 'attributesAccessibility') && (
+                    {safeGet(selectedAsset.key_metrics_json, 'attributesAccessibility') && typeof safeGet(selectedAsset.key_metrics_json, 'attributesAccessibility') === 'object' && (
                       <div>
                         <h4 className="font-semibold mb-2 flex items-center gap-2"><CheckCircle className="h-4 w-4 text-purple-500"/> Attributes & Accessibility</h4>
                         <div className="text-sm text-muted-foreground space-y-1">
@@ -699,11 +691,11 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
                       </div>
                     )}
 
-                    {safeGet(selectedAsset.key_metrics_json, 'services') && (
+                    {safeGet(selectedAsset.key_metrics_json, 'services') && typeof safeGet(selectedAsset.key_metrics_json, 'services') === 'object' && (
                       <div>
                         <h4 className="font-semibold mb-2 flex items-center gap-2"><Users className="h-4 w-4 text-orange-500"/> Services</h4>
                         <div className="text-sm text-muted-foreground space-y-2">
-                          {safeGet(selectedAsset.key_metrics_json, 'services.primaryCategory') && (
+                          {safeGet(selectedAsset.key_metrics_json, 'services.primaryCategory') && typeof safeGet(selectedAsset.key_metrics_json, 'services.primaryCategory') === 'object' && (
                              <div>
                                <p className="font-medium text-foreground">{renderSafeValue(safeGet(selectedAsset.key_metrics_json, 'services.primaryCategory.name'))}:</p>
                                <ul className="list-disc pl-5">
@@ -836,7 +828,7 @@ export const AssetLog = ({ data, onAssetClick }: AssetLogProps) => {
                           {Object.entries(selectedAsset.key_metrics_json).filter(([key, value]) =>
                             typeof value !== 'object' && !Array.isArray(value) &&
                             // Filter out common top-level metrics already shown in summary or specific asset sections
-                            !['views', 'clicks', 'sessions', 'users', 'pageviews', 'bounce_rate', 'avg_session_duration_seconds', 'forms_submitted', 'seo_health_score', 'core_web_vitals', 'followers', 'engagement_rate_percent', 'posts_last_30d', 'messages_received_last_7d', 'reach', 'profile_visits', 'page_likes', 'top_performing_post', 'campaign_budget', 'spend_current_month', 'conversions', 'ctr_percent', 'cpc', 'conversion_value', 'businessInformation', 'contactSocials', 'locationAreas', 'businessHours', 'specialHours', 'attributesAccessibility', 'services', 'qa', 'posts'].includes(key)
+                            !['views', 'clicks', 'sessions', 'users', 'pageviews', 'bounce_rate', 'avg_session_duration_seconds', 'forms_submitted', 'seo_health_score', 'core_web_vitals', 'followers', 'engagement_rate_percent', 'posts_last_30d', 'messages_received_last_7d', 'reach', 'profile_visits', 'page_likes', 'top_performing_post', 'campaign_budget', 'spend_current_month', 'impressions', 'clicks', 'conversions', 'ctr_percent', 'cpc', 'conversion_value', 'businessInformation', 'contactSocials', 'locationAreas', 'businessHours', 'specialHours', 'attributesAccessibility', 'services', 'qa', 'posts'].includes(key)
                           ).map(([key, value]) => (
                               <p key={key}><strong>{renderSafeValue(String(key).replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()))}:</strong> {renderSafeValue(value)}</p>
                           ))}
